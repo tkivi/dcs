@@ -1,1 +1,1 @@
-# dcs
+# LUA scripts for DCS Finland
