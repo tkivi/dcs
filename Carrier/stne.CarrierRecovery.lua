@@ -11,7 +11,7 @@ local Cfg = {
 --#################################################################################################
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
-    Debug = false,								-- Debug mode, true/false
+    Debug = false,                              -- Debug mode, true/false
     Carrier_Group = 'Carrier_Group',            -- Carrier name, GROUP
     Carrier_Unit = 'Carrier_Unit',              -- Carrier name, UNIT
     Carrier_TACAN = {107, 'X', 'GRW'},          -- Carrier TACAN (Channel, Mode, Message)
