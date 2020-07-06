@@ -62,7 +62,7 @@ STNE_Ziili_EventHandler:HandleEvent(world.event.S_EVENT_MARK_REMOVED)
 --- @param Text_Table table
 local function Spawn_Group(Object, Coordinates, Text_Table)
     BASE:E({FileMsg,'Spawn',Object=Object,Coordinates=Coordinates,Text_Table=Text_Table})
-    local CurSpawn = SPAWN:NewWithAlias(Object, string.format("%d",timer.getAbsTime()))
+    local CurSpawn = SPAWN:NewWithAlias(Object, 'Z'..string.format("%d",timer.getAbsTime()))
     -- Height parameter
     if Text_Table[5] ~= nil then
         Coordinates.y = UTILS.FeetToMeters(tonumber(Text_Table[5]))
