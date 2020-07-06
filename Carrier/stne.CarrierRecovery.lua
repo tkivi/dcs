@@ -1,12 +1,12 @@
 local Cfg = {
 --#################################################################################################
 --
---	CarrierRecovery
+--  CarrierRecovery
 --
---	Simple carrier recovery with turn to wind.
+--  Simple carrier recovery with turn to wind.
 --  Optional rescue helicopter, AWACS and recovery tanker.
 --
---	https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
+--  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
 --#################################################################################################
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
@@ -112,27 +112,27 @@ end
 
 -- Carrier TACAN/ICLS, refresh after 15 minutes
 SCHEDULER:New(nil, function()
-	local Carrier_Beacon = Carrier_Unit:GetBeacon()
-	Carrier_Beacon:ActivateTACAN(Carrier_TACAN[1], Carrier_TACAN[2], Carrier_TACAN[3], true)
-	Carrier_Beacon:ActivateICLS(Carrier_ICLS[1], Carrier_ICLS[2])
+    local Carrier_Beacon = Carrier_Unit:GetBeacon()
+    Carrier_Beacon:ActivateTACAN(Carrier_TACAN[1], Carrier_TACAN[2], Carrier_TACAN[3], true)
+    Carrier_Beacon:ActivateICLS(Carrier_ICLS[1], Carrier_ICLS[2])
 end, {}, 10, 900)
 
 -- Carrier turn to wind, refresh after 3 minutes
 SCHEDULER:New(nil, function()
-	local WindOverDeckMps = UTILS.KnotsToMps(Carrier_WODKnots)
-	local SpeedKmph = 1
-	local Carrier_Unit_Hdg = Carrier_Unit:GetHeading()
-	local Coord = Carrier_Group:GetCoordinate()
-	local Direction, Strength = Coord:GetWind(UTILS.FeetToMeters(170))
-	if Strength < WindOverDeckMps then
-		local NewSpeed = WindOverDeckMps - Strength
-		SpeedKmph = UTILS.MpsToKmph(NewSpeed)
-	end
-	local ToCoord = Coord:Translate(50000, Direction)
-	if Direction > Carrier_Unit_Hdg + 5 or Direction < Carrier_Unit_Hdg - 5 then
-		SpeedKmph = UTILS.KnotsToKmph(20)
-	end
-	Carrier_Group:RouteGroundTo(ToCoord, SpeedKmph, 'Off Road', 1)
+    local WindOverDeckMps = UTILS.KnotsToMps(Carrier_WODKnots)
+    local SpeedKmph = 1
+    local Carrier_Unit_Hdg = Carrier_Unit:GetHeading()
+    local Coord = Carrier_Group:GetCoordinate()
+    local Direction, Strength = Coord:GetWind(UTILS.FeetToMeters(170))
+    if Strength < WindOverDeckMps then
+        local NewSpeed = WindOverDeckMps - Strength
+        SpeedKmph = UTILS.MpsToKmph(NewSpeed)
+    end
+    local ToCoord = Coord:Translate(50000, Direction)
+    if Direction > Carrier_Unit_Hdg + 5 or Direction < Carrier_Unit_Hdg - 5 then
+        SpeedKmph = UTILS.KnotsToKmph(20)
+    end
+    Carrier_Group:RouteGroundTo(ToCoord, SpeedKmph, 'Off Road', 1)
 end, {}, 10, 180)
 
 -- EOF
