@@ -17,10 +17,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.MooseSettings.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.MooseSettings.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_MooseSettings then
@@ -34,15 +34,15 @@ local DisablePlayerMenu = Cfg.DisablePlayerMenu
 
 -- Detect Moose
 if _DATABASE ~= nil then
-    BASE:E({FileMsg,Cfg=Cfg})
+    BASE:E({FileVer,Cfg=Cfg})
     if DisablePlayerMenu then
         _SETTINGS:SetPlayerMenuOff()    -- Disable Moose settings menu
     end
 else
-    local ErrorMsg = 'ERROR: '..FileMsg..' Moose not loaded'
+    local ErrorMsg = 'ERROR: '..FileVer..' Moose not loaded'
     MESSAGE:New(ErrorMsg, 300):ToAll()
     env.info(ErrorMsg)
 end
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
