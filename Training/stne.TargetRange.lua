@@ -33,10 +33,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.TargetRange.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.TargetRange.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_TargetRange then
@@ -46,7 +46,7 @@ if STNE_Config_TargetRange then
 end
 
 -- Read config table
-BASE:E({FileMsg,Cfg=Cfg})
+BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local RangeName = Cfg.Name
 local StrafePit = Cfg.StrafePit
@@ -74,4 +74,4 @@ if JTAC_Enable then
 end
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
