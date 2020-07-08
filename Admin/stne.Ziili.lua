@@ -5,7 +5,7 @@ local Cfg = {
 --
 --  Admin/debug tools via F10 map markers. (Zeus)
 --
---  Currently supported commands: ADD, DEL, FLAG, CODE
+--  Currently supported commands: ADD, DEL, FLAG, CODE, STNE
 --
 --  Examples:
 --
@@ -32,10 +32,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.Ziili.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.Ziili.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_Ziili then
@@ -45,7 +45,7 @@ if STNE_Config_Ziili then
 end
 
 -- Read config table
-BASE:E({FileMsg,Cfg=Cfg})
+BASE:E({FileVer,Cfg=Cfg})
 local Cmd = Cfg.Command
 local Sep = Cfg.Separator
 
@@ -61,8 +61,9 @@ STNE_Ziili_EventHandler:HandleEvent(world.event.S_EVENT_MARK_REMOVED)
 --- @param Coordinates table
 --- @param Text_Table table
 local function Spawn_Group(Object, Coordinates, Text_Table)
-    BASE:E({FileMsg,'Spawn',Object=Object,Coordinates=Coordinates,Text_Table=Text_Table})
-    local CurSpawn = SPAWN:NewWithAlias(Object, 'Z'..string.format("%d",timer.getAbsTime()))
+    BASE:E({FileVer,'Spawn',Object=Object,Coordinates=Coordinates,Text_Table=Text_Table})
+    local Alias = 'Z_'..string.format("%d",timer.getAbsTime())
+    local CurSpawn = SPAWN:NewWithAlias(Object, Alias)
     -- Height parameter
     if Text_Table[5] ~= nil then
         Coordinates.y = UTILS.FeetToMeters(tonumber(Text_Table[5]))
@@ -74,10 +75,16 @@ local function Spawn_Group(Object, Coordinates, Text_Table)
                 Spawned_Group:RouteAirTo(Coordinates:Translate(UTILS.NMToMeters(50), Spawned_Group:GetHeading()), true)
             end
             if Spawned_Group:InAir() then
-                BASE:E({FileMsg,'Air'})
+                BASE:E({FileVer,'Air'})
             else
-                BASE:E({FileMsg,'Ground'})
+                BASE:E({FileVer,'Ground'})
             end
+            -- Minimal support for save
+            if Spawned_Group.stne == nil then Spawned_Group.stne = {} end
+            if Spawned_Group.stne.Save == nil then Spawned_Group.stne.Save = {} end
+            Spawned_Group.stne.Save.Group = Object
+            Spawned_Group.stne.Save.Alias = Alias
+            Spawned_Group.stne.Units = Spawned_Group:GetUnits()
         end
     )
     -- Heading parameter
@@ -96,7 +103,7 @@ end
 --- Remove group(s)
 --- @param Object string
 local function Remove_Group(Object)
-    BASE:E({FileMsg,Object=Object})
+    BASE:E({FileVer,Object=Object})
     local Group_To_Destroy = ""
     if Object == "all" then
         for i = 1, #All_Spawned_Groups, 1 do
@@ -128,6 +135,7 @@ end
 --- @param Object string
 --- @param Text_Table table
 local function GetSetFlag(Object, Text_Table)
+    BASE:E({FileVer,Object=Object,Text_Table=Text_Table})
     if Text_Table[4] ~= nil then
         local Flag_Value = Text_Table[4]
         if Flag_Value == "true" then
@@ -139,25 +147,37 @@ local function GetSetFlag(Object, Text_Table)
         Flag_Value = tonumber(Flag_Value)
         if type(Flag_Value) == "number" then
             trigger.action.setUserFlag(Object, Flag_Value)
-            BASE:E({FileMsg,'SET Flag: '..Object..' Value: '..trigger.misc.getUserFlag(Object)})
+            BASE:E({FileVer,'SET Flag: '..Object..' Value: '..trigger.misc.getUserFlag(Object)})
         else
-            BASE:E({FileMsg,'Flag not set'})
+            BASE:E({FileVer,'Flag not set'})
         end
     else
-        BASE:E({FileMsg,'READ Flag: '..Object..' Value: '..trigger.misc.getUserFlag(Object)})
+        BASE:E({FileVer,'READ Flag: '..Object..' Value: '..trigger.misc.getUserFlag(Object)})
     end
+end
+
+--- Read group stne values
+--- @param Object string
+local function ReadSTNE(Object)
+    BASE:E({FileVer,Object=Object})
+    local Grp = GROUP:FindByName(Object)
+    if Grp ~= nil and Grp.stne ~= nil then
+        BASE:E({FileVer,Grp.stne})
+        return true
+    end
+    return false
 end
 
 --- Handle Ziili command
 --- @param Text string
 --- @param Coordinates table
 local function ProcessCommand(Text, Coordinates)
-    BASE:E({FileMsg,Text=Text,Coordinates=Coordinates})
+    BASE:E({FileVer,Text=Text,Coordinates=Coordinates})
     local Text_Table = UTILS.Split(Text, Sep)
     if Text_Table[1] == Cmd then
         local Action = Text_Table[2]
         local Object = Text_Table[3]
-        BASE:E({FileMsg,'Ziili command',Action=Action,Object=Object})
+        BASE:E({FileVer,'Ziili command',Action=Action,Object=Object})
         -- ACTION: Add group
         if Action == "add" then
             local Object_Group = GROUP:FindByName(Object)
@@ -177,9 +197,13 @@ local function ProcessCommand(Text, Coordinates)
         end
         -- ACTION: Code
         if Action == "code" then
-            BASE:E({FileMsg,'RUN LUA CODE START'})
+            BASE:E({FileVer,'RUN LUA CODE START'})
             UTILS.DoString(Object)
-            BASE:E({FileMsg,'RUN LUA CODE END'})
+            BASE:E({FileVer,'RUN LUA CODE END'})
+        end
+        -- ACTION: Read stne
+        if Action == "stne" then
+            ReadSTNE(Object)
         end
         --[[ ACTION: Task
         if Action == "task" then
@@ -191,7 +215,7 @@ local function ProcessCommand(Text, Coordinates)
                         if Text_Table[4] ~= nil then
                             local NewTask = Text_Table[4]
                             TaskGroup.stneSave.Task = NewTask
-                            BASE:E({FileMsg,CurrentTask=CurrentTask,NewTask=NewTask})
+                            BASE:E({FileVer,CurrentTask=CurrentTask,NewTask=NewTask})
                         end
                     end
                 end
@@ -207,7 +231,7 @@ local function ProcessCommand(Text, Coordinates)
                         if Text_Table[4] ~= nil then
                             local NewSupply = Text_Table[4]
                             SupplyZone.stneZones.Supply = tonumber(NewSupply)
-                            BASE:E({FileMsg,CurrentSupply=CurrentSupply,NewSupply=NewSupply})
+                            BASE:E({FileVer,CurrentSupply=CurrentSupply,NewSupply=NewSupply})
                         end
                     end
                 end
@@ -220,7 +244,7 @@ end
 --- @param EventData table
 function STNE_Ziili_EventHandler:OnEventMarkRemoved(EventData)
     if EventData.text ~= nil and EventData.text:find(Cmd) then
-        BASE:E({FileMsg,EventData=EventData})
+        BASE:E({FileVer,EventData=EventData})
         local Text = EventData.text
         local Vec3 = {
             y = EventData.pos.y,
@@ -236,4 +260,4 @@ function STNE_Ziili_EventHandler:OnEventMarkRemoved(EventData)
 end
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
