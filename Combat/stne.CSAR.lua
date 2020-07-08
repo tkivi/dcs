@@ -47,10 +47,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.CSAR.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.CSAR.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_CSAR then
@@ -60,7 +60,7 @@ if STNE_Config_CSAR then
 end
 
 -- Read config table
-BASE:E({FileMsg,Cfg=Cfg})
+BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local Assets = Cfg.Assets
 local Clients_Only = Cfg.Clients_Only
@@ -172,7 +172,7 @@ local CSAR_Beacon_Nav_Sound = Sound_Folder .. SoundNav
 local CSAR_Message_Sound = Sound_Folder .. SoundMsg
 local CSAR_Schedule_Timer = 10
 
--- Eject eventhandler
+-- Eventhandler
 STNE_CSAR_EventHandler = EVENTHANDLER:New()
 STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_EJECTION)
 STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_BIRTH)
@@ -808,4 +808,4 @@ SCHEDULER:New(nil, function()
 end, {}, CSAR_Schedule_Timer, CSAR_Schedule_Timer)
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
