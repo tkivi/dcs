@@ -12,7 +12,7 @@ local Cfg = {
 --#################################################################################################
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
-    Folder = 'C:/Folder/',						-- Folder
+    Folder = 'C:/Folder/',                      -- Folder
     Scripts = {                                 -- Lua scripts, check proper loading order
         'File.lua',
     },
@@ -22,10 +22,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.LuaLoader.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.LuaLoader.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_LuaLoader then
@@ -68,4 +68,4 @@ for i = 1, #Scripts, 1 do
 end
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
