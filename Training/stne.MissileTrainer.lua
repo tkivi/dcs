@@ -21,10 +21,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.MissileTrainer.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.MissileTrainer.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_MissileTrainer then
@@ -34,7 +34,7 @@ if STNE_Config_MissileTrainer then
 end
 
 -- Read config table
-BASE:E({FileMsg,Cfg=Cfg})
+BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local Alert = Cfg.SetDefaultLaunchAlerts
 local Marks = Cfg.SetDefaultLaunchMarks
@@ -49,4 +49,4 @@ MissileTrainer:SetDefaultMissileDestruction(Destr)
 MissileTrainer:Start()
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
