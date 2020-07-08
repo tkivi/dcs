@@ -36,10 +36,10 @@ local Cfg = {
 }
 
 -- File
-local FileNme = 'stne.CarrierRecovery.lua'
-local Version = '1.0.0'
-local FileMsg = FileNme..'/'..Version
-env.info('FILE: '..FileMsg..' START')
+local LuaFile = 'stne.CarrierRecovery.lua'
+local Version = '200708'
+local FileVer = LuaFile..'/'..Version
+env.info('FILE: '..FileVer..' START')
 
 -- Override configuration
 if STNE_Config_CarrierRecovery then
@@ -49,7 +49,7 @@ if STNE_Config_CarrierRecovery then
 end
 
 -- Read config table
-BASE:E({FileMsg,Cfg=Cfg})
+BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local Carrier_Group = GROUP:FindByName(Cfg.Carrier_Group)
 local Carrier_Unit = UNIT:FindByName(Cfg.Carrier_Unit)
@@ -72,7 +72,7 @@ local Tanker_Alt = Cfg.Tanker_Alt
 
 -- Show error if carrier UNIT or GROUP not found
 if Carrier_Group == nil or Carrier_Unit == nil then
-    local ErrorMsg = 'ERROR: '..FileMsg..' Missing carrier UNIT or GROUP'
+    local ErrorMsg = 'ERROR: '..FileVer..' Missing carrier UNIT or GROUP'
     MESSAGE:New(ErrorMsg, 300):ToAll()
     env.info(ErrorMsg)
 end
@@ -136,4 +136,4 @@ SCHEDULER:New(nil, function()
 end, {}, 10, 180)
 
 -- EOF
-env.info('FILE: '..FileMsg..' END')
+env.info('FILE: '..FileVer..' END')
