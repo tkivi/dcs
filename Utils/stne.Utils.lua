@@ -60,7 +60,7 @@ local function stne_TableToSave(Tbl, WithFunc)
     end
     --- Sub function for convert table to string for save
     --- @param Tbl table
-    --- @param WithFunc boolean
+    --- @param Func boolean
     --- @param Indx number
     local function stne_SubTableToSave(Tbl, Func, Indx)
         --local Func = WithFunc or false
