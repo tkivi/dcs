@@ -5,7 +5,9 @@ local Cfg = {
 --
 --  Admin/debug tools via F10 map markers. (Zeus)
 --
---  Currently supported commands: ADD, DEL, FLAG, CODE, STNE
+--  Currently supported commands: ADD, DEL, FLAG, CODE, STNE, ONELINE,
+--                                EXPORTGROUP, EXPORTTABLE, EXPORTSTNE,
+--                                REQUEST, ADDASSET, CHANGEMIN
 --
 --  Examples:
 --
@@ -33,7 +35,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.Ziili.lua'
-local Version = '200708'
+local Version = '200805'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -161,11 +163,28 @@ end
 local function ReadSTNE(Object)
     BASE:E({FileVer,Object=Object})
     local Grp = GROUP:FindByName(Object)
+    local Zon = ZONE:FindByName(Object)
     if Grp ~= nil and Grp.stne ~= nil then
+        BASE:E({FileVer,'STNE VALUES FOR GROUP',Grp:GetName()})
         BASE:E({FileVer,Grp.stne})
         return true
+    elseif Zon ~= nil and Zon.stne ~= nil then
+        BASE:E({FileVer,'STNE VALUES FOR ZONE',Zon:GetName()})
+        BASE:E({FileVer,'ZONE',Zon.stne})
+        return true
+    else
+        BASE:E({FileVer,'STNE VALUES NOT FOUND',Object})
     end
     return false
+end
+
+--- Oneline serialize to dcs.log and message
+--- @param Object string
+local function stne_Oneline(Object)
+    BASE:E({FileVer,'stne_Oneline'})
+    local Text = UTILS.OneLineSerialize(Object)
+    env.info(Text)
+    MESSAGE:New(Text, 60):ToAll()    
 end
 
 --- Handle Ziili command
@@ -201,42 +220,62 @@ local function ProcessCommand(Text, Coordinates)
             UTILS.DoString(Object)
             BASE:E({FileVer,'RUN LUA CODE END'})
         end
-        -- ACTION: Read stne
+        -- ACTION: Read object stne
         if Action == "stne" then
             ReadSTNE(Object)
         end
-        --[[ ACTION: Task
-        if Action == "task" then
-            local TaskGroup = GROUP:FindByName(Object)
-            if TaskGroup ~= nil then
-                if TaskGroup.stneSave ~= nil then
-                    if TaskGroup.stneSave.Task ~= nil then
-                        local CurrentTask = TaskGroup.stneSave.Task
-                        if Text_Table[4] ~= nil then
-                            local NewTask = Text_Table[4]
-                            TaskGroup.stneSave.Task = NewTask
-                            BASE:E({FileVer,CurrentTask=CurrentTask,NewTask=NewTask})
-                        end
-                    end
-                end
+        -- ACTION: Oneline serialize
+        if Action == "oneline" then
+            stne_Oneline(Object)
+        end
+        -- ACTION: Export group to save file
+        if Action == "exportgroup" then
+            local ExportGrp = GROUP:FindByName(Object)
+            if ExportGrp ~= nil then
+                STNE.API.SaveTableToFile(ExportGrp, true)
             end
-        end ]]
-        --[[ ACTION: Supply
-        if Action == "supply" then
-            local SupplyZone = ZONE:FindByName(Object)
-            if SupplyZone ~= nil then
-                if SupplyZone.stneZones ~= nil then
-                    if SupplyZone.stneZones.Supply ~= nil then
-                        local CurrentSupply = SupplyZone.stneZones.Supply
-                        if Text_Table[4] ~= nil then
-                            local NewSupply = Text_Table[4]
-                            SupplyZone.stneZones.Supply = tonumber(NewSupply)
-                            BASE:E({FileVer,CurrentSupply=CurrentSupply,NewSupply=NewSupply})
-                        end
-                    end
+        end
+        -- ACTION: Export table to save file
+        if Action == "exporttable" then
+            UTILS.DoString('STNE_Ziili_TempTable = '..Object)
+            STNE.API.SaveTableToFile(STNE_Ziili_TempTable, true)
+            STNE_Ziili_TempTable = nil
+        end
+        -- ACTION: Export global STNE to save file
+        if Action == "exportstne" then
+            STNE.API.SaveTableToFile(STNE, true)
+        end
+        -- ACTION: Request asset from warehouse
+        if Action == "request" then
+            if Text_Table[3] ~= nil and Text_Table[4] ~= nil then
+                UTILS.DoString('STNE_Ziili_TempAttribute = WAREHOUSE.Attribute.'..Text_Table[3])
+                if Text_Table[5] ~= nil then
+                    STNE.API.RequestAssetFromWHToWH(Text_Table[4], Text_Table[5], STNE_Ziili_TempAttribute, 1)
+                else
+                    STNE.API.SelfRequestAssetFromWH(Text_Table[4], STNE_Ziili_TempAttribute, 1)
                 end
+                STNE_Ziili_TempAttribute = nil
             end
-        end ]]
+        end
+        -- ACTION: Add asset to warehouse
+        if Action == "addasset" then
+            local Object_Group = GROUP:FindByName(Object)
+            if Object_Group ~= nil and Text_Table[4] ~= nil and Text_Table[5] ~= nil then
+                UTILS.DoString('STNE_Ziili_TempAddAssetCount = '..Text_Table[5])
+                STNE.API.AddAssetToWH(Object, Text_Table[4], STNE_Ziili_TempAddAssetCount)
+                STNE_Ziili_TempAddAssetCount = nil
+            end
+        end
+        -- ACTION: Change warehouse min asset value
+        if Action == "changemin" then
+            if Text_Table[3] ~= nil and Text_Table[4] ~= nil and Text_Table[5] then
+                UTILS.DoString('STNE_Ziili_TempAttribute = WAREHOUSE.Attribute.'..Text_Table[3])
+                UTILS.DoString('STNE_Ziili_TempAttributeValue = '..Text_Table[5])
+                STNE.API.ChangeWHMinAsset(Text_Table[4], STNE_Ziili_TempAttribute, STNE_Ziili_TempAttributeValue)
+                STNE_Ziili_TempAttribute = nil
+                STNE_Ziili_TempAttributeValue = nil
+            end
+        end
     end
 end
 
