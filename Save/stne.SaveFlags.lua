@@ -12,7 +12,13 @@ local Cfg = {
 --#################################################################################################
     Debug = false,                              -- Debug mode, true/false
     Folder = 'C:/Folder/',                      -- Save folder
-    Flags = {'100','200','300','400','500'},    -- Flags to save
+    Flags = {                                   -- Flags to save
+        '100',
+        '200',
+        '300',
+        '400',
+        '500',
+    },
     Timer = 60,                                 -- Save data scheduler timer, in seconds
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
@@ -21,7 +27,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveFlags.lua'
-local Version = '200708'
+local Version = '200709'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -69,14 +75,12 @@ else
     SCHEDULER:New(nil, function()
         if Debug then BASE:E({FileVer,'Save START'}) end
         -- Start save data
-        local Current_Index = 0
         local Save_Data = "STNE_Save_All_Flags = {"
         for i = 1, #SaveFlags, 1 do
             local CurFlag = SaveFlags[i]
             local CurValue = trigger.misc.getUserFlag(CurFlag)
             -- Create data for save
-            Current_Index = Current_Index + 1
-            Save_Data = Save_Data .. "\n    {"
+            Save_Data = Save_Data .. "\n    [" .. tostring(i) .. "] = {"
             Save_Data = Save_Data .. "\n        Flag = '" .. tostring(CurFlag) .. "',"
             Save_Data = Save_Data .. "\n        Value = " .. tostring(CurValue) .. ","
             Save_Data = Save_Data .. "\n    },"
