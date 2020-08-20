@@ -3,23 +3,25 @@ local Cfg = {
 --
 --  SaveFlags
 --
---  Persistent save for trigger flags in mission.
+--  Persistent save for flag values.
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
 --#################################################################################################
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
-    Debug = false,                              -- Debug mode, true/false
-    Folder = 'C:/Folder/',                      -- Save folder
-    Flags = {                                   -- Flags to save
-        '100',
-        '200',
-        '300',
-        '400',
-        '500',
+    Debug = false,                                  -- Debug mode, true/false
+    Folder = 'C:\\Folder',                          -- Save folder, drive:\\folder\\folder
+    Timer = 0,                                      -- Save scheduler, in seconds. 0 = save only when mission end
+    Flags = {                                       -- Flags
+        Min = 400,                                  -- Min flag to save, default 1
+        Max = 7000,                                 -- Max flag to save, default 100000
+        Ignore = {                                  -- Flags to ignore when saving data, default none
+            500,
+            600,
+            700,
+        },
     },
-    Timer = 60,                                 -- Save data scheduler timer, in seconds
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
 --#################################################################################################
@@ -27,7 +29,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveFlags.lua'
-local Version = '200709'
+local Version = '200819'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -42,58 +44,154 @@ end
 BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local SaveFolder = Cfg.Folder
-local SaveFlags = Cfg.Flags
 local SaveTimer = Cfg.Timer
+local FlagsMin = Cfg.Flags.Min or 1
+local FlagsMax = Cfg.Flags.Max or 100000
+local FlagsIgnore = Cfg.Flags.Ignore or {}
 
--- Define save file
-local SaveFile = 'SaveData.Flags.lua'
-
--- Define save data table
-STNE_Save_All_Flags = {}
-
--- Load saved data if exists
-local Load_Data = loadfile(SaveFolder .. SaveFile)
-if Load_Data then
-    Load_Data()
-    if Debug then BASE:E({FileVer,'Flags loaded: '..tostring(#STNE_Save_All_Flags)}) end
-else
-    if Debug then BASE:E({FileVer,'No flags loaded'}) end
+-- Prepare global save variables
+if STNE == nil then
+    STNE = {}
 end
-
--- Set loaded flags
-for i = 1, #STNE_Save_All_Flags, 1 do
-    local CurFlag = STNE_Save_All_Flags[i].Flag
-    local CurValue = STNE_Save_All_Flags[i].Value
-    trigger.action.setUserFlag(CurFlag, CurValue)
+if STNE.Save == nil then
+    STNE.Save = {}
 end
+STNE.Save.Flags = {}
 
--- Enable save scheduler if IO available
+-- Prepare local save variables
+local SaveFile = 'SaveData.STNE.Save.Flags.lua'
+
+-- Check if io enabled
 if not io then
-    MESSAGE:New("INFO: SAVE OPTION DISABLED\nYou need to enable IO command in MissionScripting.lua to enable persistent save.\nLoading previously saved data is still allowed.", 60):ToAll()
-else
-    -- Save data scheduler
-    SCHEDULER:New(nil, function()
-        if Debug then BASE:E({FileVer,'Save START'}) end
-        -- Start save data
-        local Save_Data = "STNE_Save_All_Flags = {"
-        for i = 1, #SaveFlags, 1 do
-            local CurFlag = SaveFlags[i]
-            local CurValue = trigger.misc.getUserFlag(CurFlag)
-            -- Create data for save
-            Save_Data = Save_Data .. "\n    [" .. tostring(i) .. "] = {"
-            Save_Data = Save_Data .. "\n        Flag = '" .. tostring(CurFlag) .. "',"
-            Save_Data = Save_Data .. "\n        Value = " .. tostring(CurValue) .. ","
-            Save_Data = Save_Data .. "\n    },"
+    MESSAGE:New('INFO: FLAGS SAVE/LOAD OPTION DISABLED\nYou need to enable IO command in MissionScripting.lua to enable persistent save.', 600):ToAll()
+end
+
+-- Load saved data if io enabled
+if io then
+    local Load_Data = loadfile(SaveFolder..'\\'..SaveFile)
+    if Load_Data then
+        -- Load saved data
+        Load_Data()
+        if Debug then BASE:E({FileVer,'STNE.Save.Flags savedata loaded'}) end
+    end
+end
+
+-- Set flag values from savedata
+for Flag, Value in pairs(STNE.Save.Flags) do
+    trigger.action.setUserFlag(Flag, Value)
+end
+
+--- Convert table to string for save, copy from stne.Utils.lua
+--- @param Tbl table
+local function TableToSave(Tbl)
+    if Debug then BASE:E({FileVer,'TableToSave'}) end
+    local ReT = '{'
+    --- Sub function for convert table to string for save
+    --- @param Tbl table
+    --- @param Indx number
+    local function SubTableToSave(Tbl, Indx)
+        --local Func = WithFunc or false
+        local Tabs = Indx or 1
+        local Tab = ''
+        local SubReT = ''
+        for i = 1, Tabs, 1 do
+            if i <= Tabs then
+                Tab = Tab..'    '
+            end
         end
-        Save_Data = Save_Data .. "\n}"
-        -- Save data to file
-        local Save_File = assert(io.open(SaveFolder .. SaveFile, "w"))
+        for key, value in pairs(Tbl) do
+            -- Keys
+            if type(key) == 'number' then
+                key = '\n'..Tab..'['..tostring(key)..'] = '
+            elseif type(key) == 'string' then
+                key = "\n"..Tab.."['"..tostring(key).."'] = "
+            end
+            -- Values
+            if type(value) == 'string' then
+                value = "'"..tostring(value).."',"
+            elseif type(value) == 'number' then
+                value = tostring(value)..','
+            elseif type(value) == 'boolean' then
+                value = tostring(value)..','
+            elseif type(value) == 'function' then
+                    --value = 'f(),'
+            elseif type(value) == 'table' then
+                value = '{'..tostring(SubTableToSave(value, Tabs + 1))..'\n'..Tab..'},'
+            else
+                value = nil
+            end
+            if value ~= nil then
+                SubReT = SubReT..key..tostring(value)
+            end
+        end
+        return tostring(SubReT)
+    end
+    local SubReT = SubTableToSave(Tbl)
+    ReT = ReT..SubReT..'\n}'
+    return tostring(ReT)
+end
+
+-- Prepare ignore table
+local FlagsIgnoreTable = {}
+for _, Flag in pairs(FlagsIgnore) do
+    FlagsIgnoreTable[Flag] = true
+    if Debug then BASE:E({FileVer,IgnoreFlag=Flag}) end
+end
+
+--- Prepare flags data for save
+if STNE.Save.Flags == nil then STNE.Save.Flags = {} end
+local function PrepareFlags()
+    if Debug then BASE:E({FileVer,'PrepareFlags',FlagsMin=FlagsMin,FlagsMax=FlagsMax}) end
+    for i = FlagsMin, FlagsMax, 1 do
+        local FlagValue = trigger.misc.getUserFlag(i)
+        if FlagValue ~= 0 and FlagsIgnoreTable[i] == nil then
+            STNE.Save.Flags[i] = FlagValue
+            if Debug then BASE:E({FileVer,'PrepareFlags',Flag=i,Value=FlagValue}) end
+        else
+            STNE.Save.Flags[i] = nil
+        end
+    end
+end
+
+--- Save data to file
+local function SaveDataToFile()
+    if Debug then BASE:E({FileVer,'SaveDataToFile'}) end
+    -- Save data if io enabled
+    if io then
+        -- Prepare flag data for save
+        PrepareFlags()
+        -- Save data
+        local SaveData = "STNE.Save.Flags = "
+        SaveData = SaveData..TableToSave(STNE.Save.Flags)
+        local Save_File = assert(io.open(SaveFolder..'\\'..SaveFile, "w"))
         if Save_File then
-            Save_File:write(Save_Data)
+            Save_File:write(SaveData)
             Save_File:close()
+            if Debug then BASE:E({FileVer,'STNE.Save.Flags savedata save success'}) end
+        else
+            if Debug then BASE:E({FileVer,'STNE.Save.Flags savedata save failed'}) end
         end
-        if Debug then BASE:E({FileVer,'Save END count: '..tostring(#SaveFlags)}) end
+    end
+end
+
+-- End mission eventhandler for save data
+if STNE.EventHandler == nil then STNE.EventHandler = {} end
+if STNE.EventHandler.Save == nil then STNE.EventHandler.Save = {} end
+STNE.EventHandler.Save.Flags = EVENTHANDLER:New()
+STNE.EventHandler.Save.Flags:HandleEvent(world.event.S_EVENT_MISSION_END)
+-- On mission end event
+function STNE.EventHandler.Save.Flags:OnEventMissionEnd(EventData)
+    SaveDataToFile()
+end
+
+-- Scheduler
+if SaveTimer > 0 then
+    if Debug then BASE:E({FileVer,Scheduler='enabled'}) end
+    SCHEDULER:New(nil, function()
+        SaveDataToFile()
     end, {}, SaveTimer, SaveTimer)
+else
+    if Debug then BASE:E({FileVer,Scheduler='disabled'}) end
 end
 
 -- EOF
