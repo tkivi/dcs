@@ -21,7 +21,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveGroups.lua'
-local Version = '200820'
+local Version = '200824'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -43,7 +43,7 @@ local PrefixGroup = Cfg.Prefix
 if STNE == nil then
     STNE = {}
 end
-if STNE.Save == {} then
+if STNE.Save == nil then
     STNE.Save = {}
 end
 
@@ -150,6 +150,7 @@ local function PrepareGroups()
             local UnitCount = 0
             local GrpName = Grp:GetName()
             local GrpTemplate = Grp:GetTemplate()
+            local GrpCoord = Grp:GetCoordinate()
             local GrpUnits = Grp:GetUnits()
             for UnitID, Unit in UTILS.spairs(GrpUnits) do
                 if Unit:IsAlive() then
@@ -177,6 +178,15 @@ local function PrepareGroups()
                 end
             end
             GrpTemplate.units = TempTable
+            local TmpCoord = COORDINATE:New(GrpTemplate.x, 0, GrpTemplate.y)
+            local Distance = GrpCoord:Get2DDistance(TmpCoord)
+            if Distance >= 2 then
+                if GrpTemplate.uncontrolled ~= nil then
+                    if Debug then BASE:E({FileVer,Uncontrolled='false',Group=GrpName,Distance=Distance}) end
+                    GrpTemplate.uncontrolled = false
+                end
+            end
+            GrpTemplate.lateActivation = false
             STNE.Save.Groups[GrpName] = GrpTemplate
         end
     )
