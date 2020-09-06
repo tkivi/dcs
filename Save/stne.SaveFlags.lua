@@ -13,15 +13,16 @@ local Cfg = {
     Debug = false,                                  -- Debug mode, true/false
     Folder = 'C:\\Folder',                          -- Save folder, drive:\\folder\\folder
     Timer = 0,                                      -- Save scheduler, in seconds. 0 = save only when mission end
-    Flags = {                                       -- Flags
+    Flags = {                                       -- Flags to save
         Min = 400,                                  -- Min flag to save, default 1
         Max = 7000,                                 -- Max flag to save, default 100000
-        Ignore = {                                  -- Flags to ignore when saving data, default none
+        Ignore = {                                  -- Flags to ignore when saving data, default none (ResetSave always ignored)
             500,
             600,
             700,
         },
     },
+    ResetSave = 667,                                -- Reset save data flag
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
 --#################################################################################################
@@ -29,7 +30,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveFlags.lua'
-local Version = '200819'
+local Version = '200828'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -48,15 +49,20 @@ local SaveTimer = Cfg.Timer
 local FlagsMin = Cfg.Flags.Min or 1
 local FlagsMax = Cfg.Flags.Max or 100000
 local FlagsIgnore = Cfg.Flags.Ignore or {}
+local ResetSave = Cfg.ResetSave
 
--- Prepare global save variables
+-- Prepare global variables
 if STNE == nil then
     STNE = {}
 end
 if STNE.Save == nil then
     STNE.Save = {}
 end
-STNE.Save.Flags = {}
+if STNE.Flags == nil then
+    STNE.Flags = {}
+end
+--STNE.Save.Flags = {}
+STNE.Flags.ResetSaveFlags = ResetSave
 
 -- Prepare local save variables
 local SaveFile = 'SaveData.STNE.Save.Flags.lua'
@@ -77,8 +83,14 @@ if io then
 end
 
 -- Set flag values from savedata
-for Flag, Value in pairs(STNE.Save.Flags) do
-    trigger.action.setUserFlag(Flag, Value)
+if STNE.Save.Flags ~= nil then
+    if Debug then BASE:E({FileVer,'STNE.Save.Flags savedata found, set flags'}) end
+    for Flag, Value in pairs(STNE.Save.Flags) do
+        trigger.action.setUserFlag(Flag, Value)
+        if Debug then BASE:E({FileVer,Flag=Flag,Value=Value}) end
+    end
+else
+    if Debug then BASE:E({FileVer,'STNE.Save.Flags savedata not found'}) end
 end
 
 --- Convert table to string for save, copy from stne.Utils.lua
@@ -133,6 +145,8 @@ end
 
 -- Prepare ignore table
 local FlagsIgnoreTable = {}
+FlagsIgnoreTable[ResetSave] = true
+if Debug then BASE:E({FileVer,IgnoreFlag=ResetSave}) end
 for _, Flag in pairs(FlagsIgnore) do
     FlagsIgnoreTable[Flag] = true
     if Debug then BASE:E({FileVer,IgnoreFlag=Flag}) end
@@ -158,11 +172,18 @@ local function SaveDataToFile()
     if Debug then BASE:E({FileVer,'SaveDataToFile'}) end
     -- Save data if io enabled
     if io then
-        -- Prepare flag data for save
-        PrepareFlags()
-        -- Save data
-        local SaveData = "STNE.Save.Flags = "
-        SaveData = SaveData..TableToSave(STNE.Save.Flags)
+        local SaveData = ''
+        local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveFlags)
+        if ResetFlag == 0 then
+            -- Prepare flag data for save
+            PrepareFlags()
+            -- Save data
+            SaveData = 'STNE.Save.Flags = '
+            SaveData = SaveData..TableToSave(STNE.Save.Flags)
+        else
+            SaveData = '-- Reset save data, flag: '..STNE.Flags.ResetSaveFlags..' value: '..ResetFlag
+            if Debug then BASE:E({FileVer,'STNE.Save.Flags reset savedata'}) end
+        end
         local Save_File = assert(io.open(SaveFolder..'\\'..SaveFile, "w"))
         if Save_File then
             Save_File:write(SaveData)

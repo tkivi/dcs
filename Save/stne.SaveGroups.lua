@@ -14,6 +14,7 @@ local Cfg = {
     Folder = 'C:\\Folder',                          -- Save folder, drive:\\folder\\folder
     Timer = 0,                                      -- Save scheduler, in seconds. 0 = save only when mission end
     Prefix = 'SaveGroup_',                          -- GROUP prefix, save only these groups
+    ResetSave = 667,                                -- Flag to reset save data
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
 --#################################################################################################
@@ -21,7 +22,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveGroups.lua'
-local Version = '200824'
+local Version = '200828'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -38,14 +39,19 @@ local Debug = Cfg.Debug
 local SaveFolder = Cfg.Folder
 local SaveTimer = Cfg.Timer
 local PrefixGroup = Cfg.Prefix
+local ResetSave = Cfg.ResetSave
 
--- Prepare global save variables
+-- Prepare global variables
 if STNE == nil then
     STNE = {}
 end
 if STNE.Save == nil then
     STNE.Save = {}
 end
+if STNE.Flags == nil then
+    STNE.Flags = {}
+end
+STNE.Flags.ResetSaveGroups = ResetSave
 
 -- Prepare local save variables
 local SaveFile = 'SaveData.STNE.Save.Groups.lua'
@@ -67,7 +73,7 @@ end
 
 -- Remove old groups and spawn new ones if group save data exists
 if STNE.Save.Groups ~= nil then
-    if Debug then BASE:E({FileVer,'Savedata found, removing old groups'}) end
+    if Debug then BASE:E({FileVer,'STNE.Save.Groups savedata found, removing old groups'}) end
     local Set_Group = SET_GROUP:New()
     Set_Group:FilterPrefixes(PrefixGroup)
     Set_Group:FilterOnce()
@@ -82,7 +88,7 @@ if STNE.Save.Groups ~= nil then
         _DATABASE:Spawn(Template)
     end
 else
-    if Debug then BASE:E({FileVer,'Savedata not found'}) end
+    if Debug then BASE:E({FileVer,'STNE.Save.Groups savedata not found'}) end
 end
 
 --- Convert table to string for save, copy from stne.Utils.lua
@@ -197,11 +203,18 @@ local function SaveDataToFile()
     if Debug then BASE:E({FileVer,'SaveDataToFile'}) end
     -- Save data if io enabled
     if io then
-        -- Prepare groups data for save
-        PrepareGroups()
-        -- Save data
-        local SaveData = "STNE.Save.Groups = "
-        SaveData = SaveData..TableToSave(STNE.Save.Groups)
+        local SaveData = ''
+        local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveGroups)
+        if ResetFlag == 0 then
+            -- Prepare groups data for save
+            PrepareGroups()
+            -- Save data
+            SaveData = "STNE.Save.Groups = "
+            SaveData = SaveData..TableToSave(STNE.Save.Groups)
+        else
+            SaveData = '-- Reset save data, flag: '..STNE.Flags.ResetSaveGroups..' value: '..ResetFlag
+            if Debug then BASE:E({FileVer,'STNE.Save.Groups reset savedata'}) end
+        end
         local Save_File = assert(io.open(SaveFolder..'\\'..SaveFile, "w"))
         if Save_File then
             Save_File:write(SaveData)
