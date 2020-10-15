@@ -18,7 +18,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.MooseSettings.lua'
-local Version = '200708'
+local Version = '201015'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -40,7 +40,7 @@ if _DATABASE ~= nil then
     end
 else
     local ErrorMsg = 'ERROR: '..FileVer..' Moose not loaded'
-    MESSAGE:New(ErrorMsg, 300):ToAll()
+    trigger.action.outText(ErrorMsg, 300)
     env.info(ErrorMsg)
 end
 
