@@ -16,31 +16,32 @@ local Cfg = {
             Pilot = 'CSAR_PILOT_R',             -- Pilot template, GROUP
             Enemy = {                           -- Enemy infantry templates, GROUP
                 'CSAR_INF_B_1',
-                'CSAR_INF_B_2',
-                'CSAR_INF_B_3',
+                --'CSAR_INF_B_2',
+                --'CSAR_INF_B_3',
             },
         },
         [2] = {                                 -- 2 = Blue coalition
             Pilot = 'CSAR_PILOT_B',             -- Pilot template, GROUP
             Enemy = {                           -- Enemy infantry templates, GROUP
                 'CSAR_INF_R_1',
-                'CSAR_INF_R_2',
-                'CSAR_INF_R_3',
+                --'CSAR_INF_R_2',
+                --'CSAR_INF_R_3',
             },
         },
     },
     Clients_Only = true,                        -- Activate eject event only for human players
     Sound_Folder = 'Sounds/',                   -- Sounds folder, in .miz file
     Sound_Guard = 'Emergency_Beacon.ogg',       -- Guard beacon sound file, in sounds folder
-    Sound_Nav = 'Emergency_Beacon.ogg',         -- Navigation beacon sound file, in sounds folder
+    Sound_Nav = 'beaconsilent.ogg',             -- Navigation beacon sound file, in sounds folder
     Sound_Message = 'Digibeep.ogg',             -- Info message sound file, in sounds folder
     Beacon_Duration_Guard = 120,                -- Guard beacon duration after eject, in seconds
     Beacon_Duration_Nav = 1800,                 -- Navigation beacon duration after parachute land, in seconds
-    Pilot_Prefix = 'CSAR_Pilot_',               -- GROUP prefix for CSAR pilot in ground
-    Rescue_Prefix = 'CSAR_Rescue_',             -- GROUP prefix for CSAR rescue aircraft
-    Recover_Prefix = 'CSAR_Recover_',           -- GROUP prefix for CSAR recover unit
+    Pilot_Prefix = 'Rescue_',                   -- GROUP prefix for CSAR pilot on ground (for late activated and spawned pilots)
+    Rescue_Prefix = 'CSAR_',                    -- GROUP prefix for CSAR rescue aircraft
+    Recover_Prefix = '_PRC',                    -- GROUP prefix for CSAR recover unit
     Pilot_Hypothermia = 1800,                   -- Pilot in water dies to hypothermia, in seconds
-    Random_Enemy = 50,                          -- Random enemy probability, in percent
+    Pilot_UnderAttack = 3600,                   -- Pilot under attack, in seconds
+    Random_Enemy = 100,                         -- Random enemy probability, in percent
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
 --#################################################################################################
@@ -48,7 +49,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '200708'
+local Version = '201015'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -71,6 +72,7 @@ local PrefixPilot = Cfg.Pilot_Prefix
 local PrefixRescue = Cfg.Rescue_Prefix
 local PrefixRecover = Cfg.Recover_Prefix
 local Hypothermia = Cfg.Pilot_Hypothermia
+local UnderAttack = Cfg.Pilot_UnderAttack
 local RndEnemy = Cfg.Random_Enemy
 local SoundGrd = Cfg.Sound_Guard
 local SoundNav = Cfg.Sound_Nav
@@ -160,6 +162,7 @@ local CSAR_Rescue_Air_Types = {
 -- Variables
 local CSAR_Pilot_Counter = 0
 local CSAR_Enemy_Counter = 0
+local CSAR_Return_Counter = 0
 local CSAR_Pilot_LastSpawn = 0
 local CSAR_Beacon_Counter = 0
 local CSAR_CleanUp_Timer = 300
@@ -335,6 +338,21 @@ local function CleanUpTimer(CurGroup, Instant, CustomTimer)
     end
 end
 
+-- Move enemy to pilot position
+local function PilotUnderAttack(CurPilotGroup)
+    SCHEDULER:New(nil, function()
+        if CurPilotGroup ~= nil and CurPilotGroup:IsAlive() then
+            local PilotCoord = CurPilotGroup:GetCoordinate()
+            -- Move enemy
+            if CurPilotGroup.stneCSAR.Enemy ~= nil and CurPilotGroup.stneCSAR.Enemy:IsAlive() then
+                local CurEnemyGroup = CurPilotGroup.stneCSAR.Enemy
+                CurEnemyGroup:RouteGroundTo(PilotCoord, CurEnemyGroup:GetSpeedMax(), "Diamond", 0)
+                if Debug then MESSAGE:New("DEBUG: CSAR: Route enemy: " .. CurEnemyGroup:GetName(), 10):ToAll() end
+            end
+        end
+    end, {}, UnderAttack)
+end
+
 -- Spawn beacon
 local function SpawnBeacon(Coord, BeaconGuard, BeaconNav, Coalition) --(CurGroup, BeaconGuard, BeaconNav, CurUnit)
     local CSAR_Beacons_Guard = {}
@@ -406,11 +424,12 @@ local function SpawnEnemy(Coord, Coalition, PilotGroup)
     if not InWater then
         local CurEnemies = Assets[Coalition].Enemy
         local CurEnemy = CurEnemies[math.random(1, #CurEnemies)]
-        local CurAlias = "CSAR_BadBoys_" .. string.format("%d",timer.getAbsTime()) .. "_" .. CSAR_Enemy_Counter
+        local CurAlias = "E" .. string.format("%d",timer.getAbsTime()) .. "_" .. CSAR_Enemy_Counter
         local CurSpawn = SPAWN:NewWithAlias(CurEnemy, CurAlias)
         CurSpawn:OnSpawnGroup(
             function(SpwnGroup)
                 PilotGroup.stneCSAR.Enemy = SpwnGroup
+                PilotUnderAttack(PilotGroup)
                 if Debug then MESSAGE:New("DEBUG: CSAR: Spawn enemy: " .. SpwnGroup:GetName() .. " for: " .. PilotGroup:GetName(), 10):ToAll() end
             end
         )
@@ -595,8 +614,8 @@ function STNE_CSAR_EventHandler:OnEventEjection(EventData)
 
             local CurBeaconsGuard, CurBeaconsNav = SpawnBeacon(Coord, true, false, FriendlyCoalition)
 
-            local FriendlyAirbase, FriendlyDistance = Coord:GetClosestAirbase(nil, FriendlyCoalition)
-            local EnemyAirbase, EnemyDistance = Coord:GetClosestAirbase(nil, EnemyCoalition)
+            local FriendlyAirbase, FriendlyDistance = Coord:GetClosestAirbase2(nil, FriendlyCoalition)
+            local EnemyAirbase, EnemyDistance = Coord:GetClosestAirbase2(nil, EnemyCoalition)
             local GroundGroup, GroundDistance, GroundEnemy = ClosestGround(CurUnit)
 
             local RecoverGroup, RecoverDistance = ClosestRecover(CurGroup, Coord)
@@ -658,7 +677,8 @@ local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
                             else
                                 local ToCoord = RecoverGroup:GetCoordinate()
                                 local PilotTemplate = Assets[Coalition].Pilot
-                                local CurAlias = "CSAR_Return_" .. string.format("%d",timer.getAbsTime()) .. i
+                                CSAR_Return_Counter = CSAR_Return_Counter + 1
+                                local CurAlias = "R" .. string.format("%d",timer.getAbsTime()) .. "_" .. CSAR_Return_Counter --.. i
                                 local CurSpawn = SPAWN:NewWithAlias(PilotTemplate, CurAlias)
                                 CurSpawn:InitHeading(CurRescueGroup:GetHeading())
                                 CurSpawn:OnSpawnGroup(
@@ -783,8 +803,8 @@ SCHEDULER:New(nil, function()
                                 end
                                 -- Move enemy
                                 if CurPilotGroup.stneCSAR.Enemy ~= nil and CurPilotGroup.stneCSAR.Enemy:IsAlive() then
-                                    CurEnemyGroup = CurPilotGroup.stneCSAR.Enemy
-                                    CurEnemyGroup:RouteGroundTo(PilotCoord, CurEnemyGroup:GetSpeedMax(), "Off Road", 0)
+                                    local CurEnemyGroup = CurPilotGroup.stneCSAR.Enemy
+                                    CurEnemyGroup:RouteGroundTo(PilotCoord, CurEnemyGroup:GetSpeedMax(), "Diamond", 0)
                                     if Debug then MESSAGE:New("DEBUG: CSAR: Route enemy: " .. CurEnemyGroup:GetName(), 10):ToAll() end
                                 end
                             end
