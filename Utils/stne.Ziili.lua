@@ -7,7 +7,8 @@ local Cfg = {
 --
 --  Currently supported commands: ADD, DEL, FLAG, CODE, STNE, ONELINE,
 --                                EXPORTGROUP, EXPORTTABLE, EXPORTSTNE,
---                                REQUEST, ADDASSET, CHANGEMIN
+--                                REQUEST, ADDASSET, TRANSPORT, CHANGEMIN, CHANGECMD
+--                                EXPLODE
 --
 --  Examples:
 --
@@ -35,7 +36,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.Ziili.lua'
-local Version = '200805'
+local Version = '200827'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -274,6 +275,29 @@ local function ProcessCommand(Text, Coordinates)
                 STNE.API.ChangeWHMinAsset(Text_Table[4], STNE_Ziili_TempAttribute, STNE_Ziili_TempAttributeValue)
                 STNE_Ziili_TempAttribute = nil
                 STNE_Ziili_TempAttributeValue = nil
+            end
+        end
+        -- ACTION: Change warehouse command asset value
+        if Action == "changecmd" then
+            if Text_Table[3] ~= nil and Text_Table[4] ~= nil and Text_Table[5] then
+                UTILS.DoString('STNE_Ziili_TempAttribute = WAREHOUSE.Attribute.'..Text_Table[3])
+                UTILS.DoString('STNE_Ziili_TempAttributeValue = '..Text_Table[5])
+                STNE.API.ChangeWHCmdAsset(Text_Table[4], STNE_Ziili_TempAttribute, STNE_Ziili_TempAttributeValue)
+                STNE_Ziili_TempAttribute = nil
+                STNE_Ziili_TempAttributeValue = nil
+            end
+        end
+        -- ACTION: Create explosion at object or map marker
+        if Action == "explode" then
+            local Force = 1000
+            if Text_Table[4] ~= nil then
+                Force = Text_Table[4]
+            end
+            local ExplodeTarget = GROUP:FindByName(Object)
+            if ExplodeTarget ~= nil and ExplodeTarget:IsAlive() then
+                ExplodeTarget:GetCoordinate():Explosion(Force)
+            else
+                Coordinates:Explosion(Force)
             end
         end
     end
