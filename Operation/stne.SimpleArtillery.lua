@@ -3,7 +3,7 @@ local Cfg = {
 --
 --  SimpleArtillery
 --
---  Simple artillery for ME placed static artillery groups with dedicated ammo groups.
+--  Simple artillery for ME placed static artillery groups or ships with dedicated ammo groups.
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
@@ -53,7 +53,7 @@ Target_Set_Grp:FilterStart()
 -- Artillery set group
 local Arty_Set_Grp = SET_GROUP:New()
 Arty_Set_Grp:FilterActive()
-Arty_Set_Grp:FilterCategoryGround()
+--Arty_Set_Grp:FilterCategoryGround()
 Arty_Set_Grp:FilterPrefixes(PrefixArtillery)
 Arty_Set_Grp:FilterOnce()
 
@@ -71,6 +71,7 @@ Arty_Set_Grp:ForEachGroupAlive(
         CurArtyObj:SetMarkTargetsOff()
         CurArtyObj:SetMaxFiringRange(MaxFiringRange)
         CurArtyObj:SetMinFiringRange(MinFiringRange)
+        --CurArtyObj:SetMissileTypes({'weapons.missiles'})
         -- Assign ammo group for artillery
         local CurAmmoGrp = Ammo_Set_Grp:FindNearestGroupFromPointVec2(CurArtyGrp:GetPointVec2())
         CurArtyObj:SetRearmingGroup(CurAmmoGrp)
