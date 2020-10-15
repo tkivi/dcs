@@ -23,6 +23,7 @@ local Cfg = {
     BombTarget = {                              -- Bomb target
         'Bomb_Target',                          -- Target, STATIC or UNIT
         25,                                     -- Good hit distance, meters
+        25,                                     -- Bombs/rockets/missiles are only tracked if player-range distance is less than this distance, kilometers
     },
     JTAC_Enable = true,                         -- JTAC enable, true/false
     JTAC_Unit = 'JTAC_Unit',                    -- JTAC UNIT
@@ -34,7 +35,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.TargetRange.lua'
-local Version = '200708'
+local Version = '201015'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -60,6 +61,7 @@ local TargetRange = RANGE:New(RangeName)
 TargetRange:AddStrafePit(StrafePit[1], StrafePit[2], StrafePit[3], StrafePit[4], false, StrafePit[5], StrafePit[6])
 TargetRange:AddBombingTargets(BombTarget[1], BombTarget[2])
 TargetRange:SetDefaultPlayerSmokeBomb(false)
+TargetRange:SetBombtrackThreshold(BombTarget[3])
 if Debug then TargetRange:DebugON() end
 TargetRange:Start()
 
