@@ -49,7 +49,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201015'
+local Version = '201017'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -157,6 +157,21 @@ local CSAR_Rescue_Air_Types = {
     ["C-101EB"] = 1,
     ["C-101CC"] = 1,
     ["Christen Eagle II"] = 1,
+}
+
+-- Rescue air types, exit/enter vehicle angles
+local CSAR_Rescue_Air_Type_Angles = {
+    ["UH-1H"] = 70,
+    ["Mi-8MT"] = 40,
+    ["SA342M"] = 70,
+    ["SA342Mistral"] = 70,
+    ["Yak-52"] = 140,
+    ["TF-51D"] = 140,
+    ["L-39C"] = 40,
+    ["L-39ZA"] = 40,
+    ["C-101EB"] = 40,
+    ["C-101CC"] = 40,
+    ["Christen Eagle II"] = 140,
 }
 
 -- Variables
@@ -487,7 +502,8 @@ local function SpawnPilot(Coord, Coalition, EnemyNear, SpawnDelay, ActBeaconsGua
             end
         )
         CurSpawn:InitHeading(math.random(0, 359))
-        CurSpawn:SpawnFromVec2(Coord:GetVec2())
+        CurSpawn:SpawnFromVec2(Coord:Translate(math.random(5,10), math.random(0, 359)):GetVec2())
+        --CurSpawn:SpawnFromVec2(Coord:GetVec2())
     end, {}, SpawnDelay)
 end
 
@@ -647,6 +663,118 @@ function STNE_CSAR_EventHandler:OnEventEjection(EventData)
     end
 end
 
+-- Get spawn coord for pilot and heading
+local function GetSpawnCoordHdg(RescueGroup, RecoverGroup)
+    local RescueCoord = RescueGroup:GetCoordinate()
+    if RecoverGroup ~= nil then
+        local ExitAngle = 90
+        local ExitDistance = 3
+        local RescueUnit = RescueGroup:GetUnit(1)
+        if RescueUnit ~= nil and RescueUnit:IsAlive() then
+            local RescueType = RescueUnit:GetTypeName()
+            if CSAR_Rescue_Air_Type_Angles[RescueType] ~= nil then
+                ExitAngle = CSAR_Rescue_Air_Type_Angles[RescueType]
+            end
+        end
+        local RecoverCoord = RecoverGroup:GetCoordinate()
+        local Heading = RescueGroup:GetHeading()
+        local HeadingLeft = Heading - 90
+        local HeadingRight = Heading + 90
+        local LeftCoord = RescueCoord:Translate(ExitDistance, HeadingLeft)
+        local RightCoord = RescueCoord:Translate(ExitDistance, HeadingRight)
+        local Distance2DLeft = routines.utils.get2DDist(LeftCoord, RecoverCoord)
+        local Distance2DRight = routines.utils.get2DDist(RightCoord, RecoverCoord)
+        if Distance2DLeft < Distance2DRight then
+            ExitAngle = Heading - ExitAngle
+            return LeftCoord, ExitAngle
+        else
+            ExitAngle = Heading + ExitAngle
+            return RightCoord, ExitAngle
+        end
+    else
+        local RandomHeading = math.random(0,359)
+        local RandomCoord = RescueCoord:Translate(math.random(5,10), RandomHeading)
+        return RandomCoord, RandomHeading
+    end
+end
+
+-- Set waypoints for unloaded pilot
+local function ExitVehicleCoord(RescueGroup, PilotGroup, RecoverGroup)
+    local RescueUnit = RescueGroup:GetUnit(1)
+    local ExitAngle = 90
+    local ExitDistance = 3
+    if RescueUnit ~= nil and RescueUnit:IsAlive() then
+        local RescueType = RescueUnit:GetTypeName()
+        if CSAR_Rescue_Air_Type_Angles[RescueType] ~= nil then
+            ExitAngle = CSAR_Rescue_Air_Type_Angles[RescueType]
+        end
+    end
+    local Heading = RescueGroup:GetHeading()
+    local RescueCoord = RescueGroup:GetCoordinate()
+    local Coord0 = PilotGroup:GetCoordinate()
+    local Coord1
+    local Coord2
+    local Coord3 = RecoverGroup:GetCoordinate()
+    local HeadingLeft = Heading - 90
+    local HeadingRight = Heading + 90
+    local LeftCoord = RescueCoord:Translate(ExitDistance, HeadingLeft)
+    local RightCoord = RescueCoord:Translate(ExitDistance, HeadingRight)
+    local Distance2DLeft = routines.utils.get2DDist(LeftCoord, Coord3)
+    local Distance2DRight = routines.utils.get2DDist(RightCoord, Coord3)
+    if Distance2DLeft < Distance2DRight then
+        Coord1 = RescueCoord:Translate(10, Heading - ExitAngle)
+        Coord2 = RescueCoord:Translate(20, Heading - 90)
+    else
+        Coord1 = RescueCoord:Translate(10, Heading + ExitAngle)
+        Coord2 = RescueCoord:Translate(20, Heading + 90)
+    end
+    local Waypoints = {}
+    table.insert(Waypoints, Coord0:WaypointGround(PilotGroup:GetSpeedMax(), 'Off Road'))
+    table.insert(Waypoints, Coord1:WaypointGround(PilotGroup:GetSpeedMax(), 'Off Road'))
+    table.insert(Waypoints, Coord2:WaypointGround(PilotGroup:GetSpeedMax(), 'Off Road'))
+    table.insert(Waypoints, Coord3:WaypointGround(PilotGroup:GetSpeedMax(), 'Off Road'))
+    PilotGroup:Route(Waypoints)
+end
+
+-- Guide pilot to rescue
+local function EnterVehicleCoord(RescueGroup, PilotGroup)
+    local RescueUnit = RescueGroup:GetUnit(1)
+    local RescueCoord = RescueGroup:GetCoordinate()
+    local PilotCoord = PilotGroup:GetCoordinate()
+    if RescueUnit ~= nil and RescueUnit:IsAlive() and not CoordInWater(PilotCoord) then
+        local RescueType = RescueUnit:GetTypeName()
+        local EnterDistance = 3
+        local EnterAngle = 90
+        if CSAR_Rescue_Air_Type_Angles[RescueType] ~= nil then
+            EnterAngle = CSAR_Rescue_Air_Type_Angles[RescueType]
+        end
+        local Distance2D = routines.utils.get2DDist(PilotCoord, RescueCoord)
+        local Heading = RescueGroup:GetHeading()
+        if Distance2D > 22 then
+            EnterDistance = 20
+            EnterAngle = 90
+        elseif Distance2D > 12 and RescueGroup:IsAirPlane() then
+            EnterDistance = 10
+            EnterAngle = EnterAngle - 10
+        end
+        local HeadingLeft = Heading - EnterAngle
+        local HeadingRight = Heading + EnterAngle
+        local LeftCoord = RescueCoord:Translate(EnterDistance, HeadingLeft)
+        local RightCoord = RescueCoord:Translate(EnterDistance, HeadingRight)
+        local Distance2DLeft = routines.utils.get2DDist(LeftCoord, PilotCoord)
+        local Distance2DRight = routines.utils.get2DDist(RightCoord, PilotCoord)
+        if Distance2DLeft < Distance2DRight then
+            if Debug then MESSAGE:New('EnterVehicleCoord = left\nEnterDistance = '..EnterDistance..'\nEnterAngle = '..EnterAngle, 10):ToAll() end
+            return LeftCoord
+        else
+            if Debug then MESSAGE:New('EnterVehicleCoord = right\nEnterDistance = '..EnterDistance..'\nEnterAngle = '..EnterAngle, 10):ToAll() end
+            return RightCoord
+        end
+    else
+        return RescueCoord
+    end
+end
+
 -- Unload pilots from plane/helicopter
 local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
     if CurRescueGroup ~= nil and RecoverGroup ~= nil then
@@ -680,7 +808,7 @@ local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
                                 CSAR_Return_Counter = CSAR_Return_Counter + 1
                                 local CurAlias = "R" .. string.format("%d",timer.getAbsTime()) .. "_" .. CSAR_Return_Counter --.. i
                                 local CurSpawn = SPAWN:NewWithAlias(PilotTemplate, CurAlias)
-                                CurSpawn:InitHeading(CurRescueGroup:GetHeading())
+                                --CurSpawn:InitHeading(CurRescueGroup:GetHeading())
                                 CurSpawn:OnSpawnGroup(
                                     function(SpwnGroup)
                                         local CurMsgTable = CSAR_Msg_Unload_Pilot
@@ -694,13 +822,17 @@ local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
                                             if Distance2D > Distance_Bad then
                                                 CurMsgTable = CSAR_Msg_Unload_Pilot_Bad
                                             end
-                                            SpwnGroup:RouteGroundTo(ToCoord, SpwnGroup:GetSpeedMax(), "Off Road", 1)
+                                            ExitVehicleCoord(CurRescueGroup, SpwnGroup, RecoverGroup)
+                                            --SpwnGroup:RouteGroundTo(ToCoord, SpwnGroup:GetSpeedMax(), "Off Road", 1)
                                         end
                                         Random_Message_To_Group(CurRescueGroup, CurMsgTable, true, true)
                                         CleanUpTimer(SpwnGroup)
                                     end
                                 )
-                                CurSpawn:SpawnFromUnit(CurRescueGroup)
+                                local NewCoord, NewHeading = GetSpawnCoordHdg(CurRescueGroup, RecoverGroup)
+                                CurSpawn:InitHeading(NewHeading)
+                                CurSpawn:SpawnFromVec2(NewCoord:GetVec2())
+                                --CurSpawn:SpawnFromUnit(CurRescueGroup)
                                 CurRescueGroup.stneCSAR.PilotCargo = CurRescueGroup.stneCSAR.PilotCargo - 1
                             end
                         else
@@ -781,6 +913,7 @@ SCHEDULER:New(nil, function()
                                 end
                             -- Move closer
                             elseif Distance2D <= CSAR_Move_Pilot_Distance then
+                                RescueCoord = EnterVehicleCoord(CurRescueGroup, CurPilotGroup)
                                 RescueCoord.y = PilotCoord.y --0
                                 CurPilotGroup:RouteGroundTo(RescueCoord, CurPilotGroup:GetSpeedMax(), "Off Road", 0)
                                 if Debug then MESSAGE:New("DEBUG: CSAR: Move: " .. CurPilotGroup:GetName(), 10):ToAll() end
