@@ -3,7 +3,7 @@ local Cfg = {
 --
 --  SaveGroups
 --
---  Persistent save for groups created in mission editor.
+--  Persistent save for groups.
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
@@ -13,7 +13,10 @@ local Cfg = {
     Debug = false,                                  -- Debug mode, true/false
     Folder = 'C:\\Folder',                          -- Save folder, drive:\\folder\\folder
     Timer = 0,                                      -- Save scheduler, in seconds. 0 = save only when mission end
-    Prefix = 'SaveGroup_',                          -- GROUP prefix, save only these groups
+    Prefix = {                                      -- GROUP prefixes, save only these groups
+        'GroupPrefixOne',
+        'GroupPrefixTwo',
+    },
     ResetSave = 667,                                -- Flag to reset save data
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
@@ -22,7 +25,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveGroups.lua'
-local Version = '200828'
+local Version = '201022'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -42,15 +45,9 @@ local PrefixGroup = Cfg.Prefix
 local ResetSave = Cfg.ResetSave
 
 -- Prepare global variables
-if STNE == nil then
-    STNE = {}
-end
-if STNE.Save == nil then
-    STNE.Save = {}
-end
-if STNE.Flags == nil then
-    STNE.Flags = {}
-end
+if STNE == nil then STNE = {} end
+if STNE.Save == nil then STNE.Save = {} end
+if STNE.Flags == nil then STNE.Flags = {} end
 STNE.Flags.ResetSaveGroups = ResetSave
 
 -- Prepare local save variables
@@ -184,15 +181,15 @@ local function PrepareGroups()
                 end
             end
             GrpTemplate.units = TempTable
-            local TmpCoord = COORDINATE:New(GrpTemplate.x, 0, GrpTemplate.y)
-            local Distance = GrpCoord:Get2DDistance(TmpCoord)
-            if Distance >= 2 then
-                if GrpTemplate.uncontrolled ~= nil then
-                    if Debug then BASE:E({FileVer,Uncontrolled='false',Group=GrpName,Distance=Distance}) end
-                    GrpTemplate.uncontrolled = false
-                end
-            end
-            GrpTemplate.lateActivation = false
+            --local TmpCoord = COORDINATE:New(GrpTemplate.x, 0, GrpTemplate.y)
+            --local Distance = GrpCoord:Get2DDistance(TmpCoord)
+            --if Distance >= 2 then
+            --    if GrpTemplate.uncontrolled ~= nil then
+            --        if Debug then BASE:E({FileVer,Uncontrolled='false',Group=GrpName,Distance=Distance}) end
+            --        GrpTemplate.uncontrolled = false
+            --    end
+            --end
+            --GrpTemplate.lateActivation = false
             STNE.Save.Groups[GrpName] = GrpTemplate
         end
     )
