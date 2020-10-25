@@ -52,6 +52,17 @@ local Cfg = {
             {'AO1 OBJ COMS CENTER', 'Aleppo Communications Center'},
             {'AO1 OBJ IOC', 'Intercept Operations Center'},
             {'AO1 OBJ SOC', 'Sector Operations Center'},
+            {'AO1 MINAKH ARMOR BORDER', 'Border armor'},
+            {'AO1 MINAKH ARMOR', 'Minakh armor',},
+            {'AO1 ALEPPO ARMOR1-1', 'Aleppo armor'},
+            {'AO1 ALEPPO ARMOR1-2', 'Aleppo armor'},
+            {'AO1 KUWEIRES ARMOR', 'Kuweires armor'},
+            {'AO1 JIRAH ARMOR', 'Jirah armor'},
+            {'AO1 TAFTANAZ ARMOR BORDER', 'Border armor'},
+            {'AO1 TAFTANAZ ARMOR', 'Taftanaz armor'},
+            {'AO1 ABU AL DUHUR ARMOR', 'Abu Al Duhur armor'},
+            {'AO1 AL SAFIRA ARMOR1-1', 'Al Safirah armor 1'},
+            {'AO1 AL SAFIRA ARMOR1-2', 'Al Safirah armor 2'},
         },
         ['AO Raqqa'] = {
         --  {'GroupOrStaticName', 'Description'}
@@ -65,6 +76,7 @@ local Cfg = {
             {'AO2 OBJ FUEL TANK4', 'Fuel Tank 4'},
             {'AO2 OBJ FUEL TANK5', 'Fuel Tank 5'},
             {'AO2 OBJ FUEL TANK6', 'Fuel Tank 6'},
+            {'AO2 TABQA ARMOR', 'Tabqa armor'},
         },
         ['AO Latakia'] = {
         --  {'GroupOrStaticName', 'Description'}
@@ -78,6 +90,10 @@ local Cfg = {
             {'AO3 OBJ Tarantul-class corvette', 'Tarantul-class corvette'},
             {'AO3 OBJ SILKWORM1', 'Silkworm Site North'},
             {'AO3 OBJ SILKWORM2', 'Silkworm Site South'},
+            {'AO3 TARTUS ARMOR BORDER', 'Border armor'},
+            {'AO3 TARTUS ARMOR', 'Tartus armor'},
+            {'AO3 JABLEH ARMOR', 'Jablah armor'},
+            {'AO3 BASSEL ASSAD ARMOR1', 'Bassel Assad armor'},
         },
         ['AO Hama'] = {
         --  {'GroupOrStaticName', 'Description'}
@@ -88,6 +104,11 @@ local Cfg = {
             {'AO4 OBJ IOC', 'Intercept Operations Center'},
             {'AO4 OBJ ADOC', 'Air Defence Operations Center'},
             {'AO4 OBJ SCUD1', 'SCUD site'},
+            {'AO4 AL QUSYAR ARMOR BORDER', 'Border armor'},
+            {'AO4 AL QUSYAR ARMOR', 'Al Qusayr armor'},
+            {'AO4 ADA ARMOR', 'ADA armor'},
+            {'AO4 HAMA ARMOR', 'Hama armor'},
+            {'AO4 AN NASIRIYAH ARMOR', 'An Nasiriyah armor'},
         },
         ['AO Palmyra'] = {
         --  {'GroupOrStaticName', 'Description'}
@@ -102,6 +123,7 @@ local Cfg = {
             {'AO5 OBJ TANK1', 'Chemical Tank 1'},
             {'AO5 OBJ TANK2', 'Chemical Tank 2'},
             {'AO5 OBJ TANK3', 'Chemical Tank 3'},
+            {'AO5 PALMYRA ARMOR', 'Palmyra armor'},
         },
         ['AO Damascus'] = {
         --  {'GroupOrStaticName', 'Description'}
@@ -115,6 +137,15 @@ local Cfg = {
             {'AO6 OBJ MLRS1', 'MLRS Site 1'},
             {'AO6 OBJ MLRS2', 'MLRS Site 2'},
             {'AO6 OBJ LADA SAMARA', 'Assads prized Lada Samara'},
+            {'AO6 MEZZEH ARMOR BORDER', 'Border armor'},
+            {'AO6 MEZZEH ARMOR', 'Mezzeh armor'},
+            {'AO6 QABR ARMOR', 'Qabr As Sitt armor'},
+            {'AO6 MAJR SULTAN ARMOR', 'Marj As Sultan armor'},
+            {'AO6 KHALKHALAH ARMOR BORDER', 'Border armor'},
+            {'AO6 KHALKHALAH ARMOR', 'khalkhalah armor'},
+            {'AO6 MARJ RUHAYYIL ARMOR', 'Marj Ruhayyil armor'},
+            {'AO6 DAMASCUS ARMOR', 'Damascus armor'},
+            {'AO6 AL DUMAYR ARMOR', 'Al Dumayr armor'},
         },
     },
     StatusMessages = {                                          -- Status message for coalition
@@ -226,6 +257,7 @@ local Cfg = {
                 [99611] = 'Damascus AB Attack Aircraft',
                 [99621] = 'Marj As Sultan AB Helicopters',
                 [99622] = 'Qabr As Sitt AB Helicopters',
+                [99644] = 'Damascus AB Fighters',
             },
         },
     },
@@ -236,7 +268,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SyriaTrap.lua'
-local Version = '201001'
+local Version = '201022'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -294,6 +326,7 @@ local function ShowStatus(ObjectiveName)
                 if Debug then BASE:E({FileVer,'Create marker'}) end
                 local RandomCoord = Coord:Translate(math.random(100,1000), math.random(0,359))
                 Markers[Name] = MARKER:New(RandomCoord, Name)
+                Markers[Name]:ReadOnly()
                 Markers[Name]:SetText(Desc)
                 Markers[Name]:ToBlue()
             end
