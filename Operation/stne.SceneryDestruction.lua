@@ -4,22 +4,22 @@ local Cfg = {
 --  SceneryDestruction
 --
 --  Monitor scenery destruction in zone and set flag if monitored object is destroyed.
---  Destroy scenery object if flag is already true.
+--  Destroy scenery object with explosion if flag is already true.
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
 --#################################################################################################
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
-    Debug = true,                                 -- Debug mode, true/false
+    Debug = true,                                               -- Debug mode, true/false
     SceneryData = {
-        ['SceneryZone1'] = {                      -- ['Zone']
-            [150208603] = {10001, 1000},          -- [SceneryID] = {Flag, ExplodeForce}
-            [150208542] = {10002, 1000},
-            [150208710] = {10003, 5000},
-            [150208707] = {10004, 5000},
-            [150208712] = {10005, 5000},
-            [150208709] = {10006, 5000},
+        ['SceneryZone1'] = {                                    -- ['Zone']
+            [150208603] = {10001, 1000, 'Fuel tank'},           -- [SceneryID] = {Flag, ExplodeForce, Description}
+            [150208542] = {10002, 1000, 'Office'},
+            [150208710] = {10003, 5000, 'Oil tank'},
+            [150208707] = {10004, 5000, 'Oil tank'},
+            [150208712] = {10005, 5000, 'Oil tank'},
+            [150208709] = {10006, 5000, 'Oil tank'},
         },
         ['SceneryZone2'] = {},
         ['SceneryZone3'] = {},
@@ -31,7 +31,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SceneryDestruction.lua'
-local Version = '201015'
+local Version = '201022'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -70,6 +70,7 @@ local function BurningSmoke(Coord, WithFire)
 end
 
 -- Check all zones and destroy scenery if flag value true
+local SceneryMarkers = {}
 for ZoneName, SceneryIDs in pairs(SceneryData) do
     local Zone = ZONE:FindByName(ZoneName)
     if Zone ~= nil then
@@ -88,9 +89,17 @@ for ZoneName, SceneryIDs in pairs(SceneryData) do
                 if FlagValue >= 1 then
                     SceneryCoord:Explosion(Force)
                     BurningSmoke(SceneryCoord, false)
+                else
+                    if not Debug then
+                        local MarkerText = 'Target:\n'..SceneryIDs[SceneryName][3]
+                        SceneryMarkers[SceneryName] = MARKER:New(SceneryCoord, SceneryName)
+                        SceneryMarkers[SceneryName]:ReadOnly()
+                        SceneryMarkers[SceneryName]:SetText(MarkerText)
+                        SceneryMarkers[SceneryName]:ToBlue()
+                    end
                 end
                 if Debug then
-                    SceneryCoord:MarkToAll('#########CONFIGURED#########\n'..SceneryType..'\nZone: '..ZoneName..'\nSceneryID: '..SceneryName..'\nFlag: '..SceneryIDs[SceneryName][1]..' ExplodeForce: '..SceneryIDs[SceneryName][2])
+                    SceneryCoord:MarkToAll(SceneryType..'\nZone: '..ZoneName..'\nSceneryID: '..SceneryName..'\nFlag: '..SceneryIDs[SceneryName][1]..' ExplodeForce: '..SceneryIDs[SceneryName][2]..'\nDescription: '..SceneryIDs[SceneryName][3])
                     SceneryCoord:SmokeBlue()
                 end
             else
@@ -115,11 +124,15 @@ function STNE.EventHandler.SceneryDestruction:OnEventDead(EventData)
                 if SceneryIDs[SceneryName] ~= nil then
                     local Flag = SceneryIDs[SceneryName][1]
                     local Force = SceneryIDs[SceneryName][2]
+                    local Description = SceneryIDs[SceneryName][3]
                     local SceneryCoord = EventData.IniUnit:GetCoordinate()
                     SceneryCoord:Explosion(Force)
                     BurningSmoke(SceneryCoord, true)
                     trigger.action.setUserFlag(Flag, 1)
-                    if Debug then BASE:E({FileVer,'OnEventDead',SceneryName=SceneryName,SetFlag=Flag,ExplodeForce=Force}) end
+                    if SceneryMarkers[SceneryName] ~= nil then
+                        SceneryMarkers[SceneryName]:Remove(0)
+                    end
+                    if Debug then BASE:E({FileVer,'OnEventDead',SceneryName=SceneryName,SetFlag=Flag,ExplodeForce=Force,Description=Description}) end
                 end
             end
         end
