@@ -56,7 +56,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SlingloadLogistic.lua'
-local Version = '201025'
+local Version = '201103'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -74,7 +74,9 @@ local CargoTypes = Cfg.CargoTypes
 local CargoZones = Cfg.CargoZones
 
 -- Local variables
+local Debug2 = false
 local SlingloadMarkers = {}
+local CachedCargo = {}
 
 -- Set static for spawned cargo
 local Cargo_Prefix = {}
@@ -175,6 +177,22 @@ local function GetStaticName(StaticName)
     return ReturnName
 end
 
+--- Add zone cached cargo values to counted cargo
+--- @param CargoTable table
+local function AddCachedCargo(CountedCargo, ZoneName)
+    if CachedCargo[ZoneName] ~= nil then
+        if Debug then BASE:E({FileVer,'AddCachedCargo',CountedCargo=CountedCargo,CachedCargo=CachedCargo[ZoneName]}) end
+        for Cargo, Value in pairs(CachedCargo[ZoneName]) do
+            if CountedCargo[Cargo] == nil then
+                CountedCargo[Cargo] = Value
+            else
+                CountedCargo[Cargo] = CountedCargo[Cargo] + Value
+            end
+        end
+    end
+    return CountedCargo
+end
+
 --- Count cargo values
 --- @param CargoTable table
 local function CountCargo(CargoTable)
@@ -250,17 +268,40 @@ local function IsZoneCargoCompleted(CountedCargo, ZoneName, Coalition)
     return true
 end
 
---- Remove cargo
+--- Remove cargo and update cargo cache
 --- @param CargoTable table
-local function RemoveCargo(CargoTable)
+--- @param ZoneName string
+--- @param Cache boolean
+local function RemoveCargo(CargoTable, ZoneName, Cache)
+    local ToCache = Cache or false
     for _, CargoObj in pairs(CargoTable) do
-        if Debug then BASE:E({FileVer,RemoveCargo=CargoObj:GetName()}) end
+        local CargoName = CargoObj:GetName()
+        if Debug then BASE:E({FileVer,RemoveCargo=CargoName,Cache=ToCache}) end
+        if ToCache == true then
+            CargoName = GetStaticName(CargoName)
+            local Cargo = CargoTypes[CargoName].Cargo
+            local Value = CargoTypes[CargoName].Value
+            if CachedCargo[ZoneName] == nil then
+                CachedCargo[ZoneName] = {}
+            end
+            if CachedCargo[ZoneName][Cargo] == nil then
+                CachedCargo[ZoneName][Cargo] = Value
+            else
+                CachedCargo[ZoneName][Cargo] = CachedCargo[ZoneName][Cargo] + Value
+            end
+        end
         CargoObj:Destroy()
+    end
+    if ToCache == false then
+        if CachedCargo[ZoneName] ~= nil then
+            CachedCargo[ZoneName] = nil
+        end
     end
 end
 
 --- Create zone cargo table
 --- @param ZoneName string
+local CargoCoords = {}
 local function CreateZoneCargoTable(ZoneName)
     if Debug then BASE:E({FileVer,'CreateZoneCargoTable',Zone=ZoneName}) end
     local ZoneObj = ZONE:FindByName(ZoneName)
@@ -268,13 +309,30 @@ local function CreateZoneCargoTable(ZoneName)
     Cargo_Set_Static:ForEachStaticCompletelyInZone(
         ZoneObj,
         function(CargoObj)
-            local CargoCoord = CargoObj:GetCoordinate()
-            local CargoHeight = CargoCoord.y
-            local LandHeight = CargoCoord:GetLandHeight()
-            local AboveGround = CargoHeight - LandHeight
-            if Debug then BASE:E({FileVer,CargoName=CargoObj:GetName(),CargoHeight=CargoHeight,LandHeight=LandHeight,AboveGround=AboveGround}) end
-            if AboveGround < 1 then
-                table.insert(CargoTable, CargoObj)
+            if CargoObj ~= nil and CargoObj:IsAlive() then
+                local CargoName = CargoObj:GetName()
+                local CargoCoord = CargoObj:GetCoordinate()
+                local CargoHeight = CargoCoord.y
+                local CargoX = math.floor(CargoCoord.x)
+                local CargoY = math.floor(CargoCoord.y)
+                local CargoZ = math.floor(CargoCoord.z)
+                local LandHeight = CargoCoord:GetLandHeight()
+                local AboveGround = CargoHeight - LandHeight
+                if CargoCoords[CargoName] == nil then
+                    CargoCoords[CargoName] = {}
+                    CargoCoords[CargoName]['x'] = CargoX
+                    CargoCoords[CargoName]['y'] = CargoY
+                    CargoCoords[CargoName]['z'] = CargoZ
+                end
+                if CargoCoords[CargoName]['x'] == CargoX and CargoCoords[CargoName]['y'] == CargoY and CargoCoords[CargoName]['z'] == CargoZ then
+                    if Debug then BASE:E({FileVer,ZoneName=ZoneName,x=CargoX==CargoCoords[CargoName]['x'],y=CargoY==CargoCoords[CargoName]['y'],z=CargoZ==CargoCoords[CargoName]['z'],CargoName=CargoName}) end
+                    table.insert(CargoTable, CargoObj)
+                else
+                    if Debug then BASE:E({FileVer,ZoneName=ZoneName,x=CargoX==CargoCoords[CargoName]['x'],y=CargoY==CargoCoords[CargoName]['y'],z=CargoZ==CargoCoords[CargoName]['z'],CargoName=CargoName}) end
+                    CargoCoords[CargoName]['x'] = CargoX
+                    CargoCoords[CargoName]['y'] = CargoY
+                    CargoCoords[CargoName]['z'] = CargoZ
+                end
             end
         end
     )
@@ -288,10 +346,10 @@ for ZoneName, ZoneData in pairs(CargoZones) do
         local FlagValue = trigger.misc.getUserFlag(ZoneData.Flag)
         if FlagValue == 1 or FlagValue == 2 then
             local CargoTable = CreateZoneCargoTable(ZoneName)
-            RemoveCargo(CargoTable)
+            RemoveCargo(CargoTable, ZoneName)
             SpawnCargoInZone(ZoneName, FlagValue)
         end
-        if Debug then ZoneObj:MarkZone(8) end
+        if Debug2 then ZoneObj:MarkZone(8) end
     else
         local ErrorMsg = 'ERROR: '..FileVer..' Cannot find zone: '..ZoneName
         MESSAGE:New(ErrorMsg, 300):ToAll()
@@ -348,16 +406,20 @@ SCHEDULER:New(nil, function()
         if FlagValue == 1 or FlagValue == 2 then -- Red or Blue coalition have cargo available
             RefreshMarker(CountedCargo, ZoneName, false, FlagValue)
         elseif FlagValue == 3 or FlagValue == 4 then -- Red or Blue coalition request cargo
+            CountedCargo = AddCachedCargo(CountedCargo, ZoneName)
+            RemoveCargo(CargoTable, ZoneName, true)
             if FlagValue == 3 then FlagValue = 1 end
             if FlagValue == 4 then FlagValue = 2 end
             if IsZoneCargoCompleted(CountedCargo, ZoneName, FlagValue) then
                 trigger.action.setUserFlag(ZoneData.Flag, FlagValue)
                 RefreshMarker({}, ZoneName, false, 0)
-                RemoveCargo(CargoTable)
+                RemoveCargo(CargoTable, ZoneName)
             else
                 RefreshMarker(CountedCargo, ZoneName, true, FlagValue)
             end
         elseif FlagValue == 5 then -- Both coalitions request cargo
+            CountedCargo = AddCachedCargo(CountedCargo, ZoneName)
+            RemoveCargo(CargoTable, ZoneName, true)
             local RedDone = IsZoneCargoCompleted(CountedCargo, ZoneName, 1)
             local BlueDone = IsZoneCargoCompleted(CountedCargo, ZoneName, 2)
             if RedDone or BlueDone then
@@ -367,14 +429,14 @@ SCHEDULER:New(nil, function()
                     trigger.action.setUserFlag(ZoneData.Flag, 2)
                 end
                 RefreshMarker({}, ZoneName, false, 0)
-                RemoveCargo(CargoTable)
+                RemoveCargo(CargoTable, ZoneName)
             else
                 RefreshMarker(CountedCargo, ZoneName, true, 1)
                 RefreshMarker(CountedCargo, ZoneName, true, 2)
             end
         elseif FlagValue == 11 or FlagValue == 12 then -- Red or Blue force spawn now
             RefreshMarker({}, ZoneName, false, 0)
-            RemoveCargo(CargoTable)
+            RemoveCargo(CargoTable, ZoneName)
             if FlagValue == 11 then
                 SpawnCargoInZone(ZoneName, 1)
                 trigger.action.setUserFlag(ZoneData.Flag, 1)
