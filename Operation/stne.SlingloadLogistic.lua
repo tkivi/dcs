@@ -5,6 +5,8 @@ local Cfg = {
 --
 --  Slingload cargo logistic with flag values.
 --
+--  Use with stne.SaveFlags.lua and stne.SaveTables.lua for persistent save.
+--
 --  CargoZone flag values:
 --      1 = Spawn RED cargo when mission start
 --      2 = Spawn BLUE cargo when mission start
@@ -56,7 +58,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SlingloadLogistic.lua'
-local Version = '201103'
+local Version = '201108'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -73,10 +75,15 @@ local Debug = Cfg.Debug
 local CargoTypes = Cfg.CargoTypes
 local CargoZones = Cfg.CargoZones
 
+-- Prepare global variables
+if STNE == nil then STNE = {} end
+if STNE.Save == nil then STNE.Save = {} end
+if STNE.Save.Tables == nil then STNE.Save.Tables = {} end
+if STNE.Save.Tables.SlingloadLogistic == nil then STNE.Save.Tables.SlingloadLogistic = {} end
+
 -- Local variables
 local Debug2 = false
 local SlingloadMarkers = {}
-local CachedCargo = {}
 
 -- Set static for spawned cargo
 local Cargo_Prefix = {}
@@ -180,9 +187,9 @@ end
 --- Add zone cached cargo values to counted cargo
 --- @param CargoTable table
 local function AddCachedCargo(CountedCargo, ZoneName)
-    if CachedCargo[ZoneName] ~= nil then
-        if Debug then BASE:E({FileVer,'AddCachedCargo',CountedCargo=CountedCargo,CachedCargo=CachedCargo[ZoneName]}) end
-        for Cargo, Value in pairs(CachedCargo[ZoneName]) do
+    if STNE.Save.Tables.SlingloadLogistic[ZoneName] ~= nil then
+        if Debug then BASE:E({FileVer,'AddCachedCargo',CountedCargo=CountedCargo,CachedCargo=STNE.Save.Tables.SlingloadLogistic[ZoneName]}) end
+        for Cargo, Value in pairs(STNE.Save.Tables.SlingloadLogistic[ZoneName]) do
             if CountedCargo[Cargo] == nil then
                 CountedCargo[Cargo] = Value
             else
@@ -281,20 +288,20 @@ local function RemoveCargo(CargoTable, ZoneName, Cache)
             CargoName = GetStaticName(CargoName)
             local Cargo = CargoTypes[CargoName].Cargo
             local Value = CargoTypes[CargoName].Value
-            if CachedCargo[ZoneName] == nil then
-                CachedCargo[ZoneName] = {}
+            if STNE.Save.Tables.SlingloadLogistic[ZoneName] == nil then
+                STNE.Save.Tables.SlingloadLogistic[ZoneName] = {}
             end
-            if CachedCargo[ZoneName][Cargo] == nil then
-                CachedCargo[ZoneName][Cargo] = Value
+            if STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] == nil then
+                STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] = Value
             else
-                CachedCargo[ZoneName][Cargo] = CachedCargo[ZoneName][Cargo] + Value
+                STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] = STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] + Value
             end
         end
         CargoObj:Destroy()
     end
     if ToCache == false then
-        if CachedCargo[ZoneName] ~= nil then
-            CachedCargo[ZoneName] = nil
+        if STNE.Save.Tables.SlingloadLogistic[ZoneName] ~= nil then
+            STNE.Save.Tables.SlingloadLogistic[ZoneName] = nil
         end
     end
 end
