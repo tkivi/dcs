@@ -4,6 +4,7 @@ local Cfg = {
 --  MissionEnd
 --
 --  Mission end timer with warnings.
+--  F10 radio menu. (optional)
 --  Overtime to give more time for clients to land. (optional)
 --  Expedite mission end when no activity. (optional)
 --
@@ -13,10 +14,11 @@ local Cfg = {
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
     Debug = false,                                      -- Debug mode, true/false
+    F10Menu = true,                                     -- Enable F10 menu, true/false
     EndFlag = 666,                                      -- Mission end flag
     MissionTime = 18000,                                -- Time to set mission end flag true, in seconds
-    OverTime = 900,                                     -- Extra time for clients to land (0 = disabled), in seconds
-    ExpediteTime = 2100,                                -- Expedite mission end time if no clients alive (0 = disabled), in seconds
+    OverTime = 1800,                                    -- Extra time for clients to land (0 = disabled), in seconds
+    ExpediteTime = 0,                                   -- Expedite mission end time if no clients alive (0 = disabled), in seconds
     Warnings = {                                        -- Warning timers before mission end, in seconds
         3600,
         1800,
@@ -36,7 +38,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.MissionEnd.lua'
-local Version = '201031'
+local Version = '201111'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -50,6 +52,7 @@ end
 -- Read config table
 BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
+local F10Menu = Cfg.F10Menu
 local EndFlag = Cfg.EndFlag
 local MissionTime = Cfg.MissionTime
 local OverTime = Cfg.OverTime
@@ -101,14 +104,20 @@ end
 --- @param Duration number
 --- @param ClearOld boolean
 --- @param UseSound boolean
-local function SendMessage(MessageText, Duration, ClearOld, UseSound)
+--- @param Client table
+local function SendMessage(MessageText, Duration, ClearOld, UseSound, Client)
     local Dur = Duration or 15
     local Clr = ClearOld or false
     local Snd = UseSound or false
-    if Debug then BASE:E({FileVer,SendMessage=MessageText,Duration=Dur,ClearOld=Clr,UseSound=Snd}) end
-    MESSAGE:New(MessageText, Dur, nil, Clr):ToAll()
-    if MessageSound and Snd == true then
-        MessageSound:ToAll()
+    if Client then
+        if Debug then BASE:E({FileVer,SendMessage=MessageText,Duration=Dur,ClearOld=Clr,UseSound=Snd,Client=Client:GetPlayerName()}) end
+        MESSAGE:New(MessageText, Dur, nil, Clr):ToGroup(Client:GetGroup())
+    else
+        if Debug then BASE:E({FileVer,SendMessage=MessageText,Duration=Dur,ClearOld=Clr,UseSound=Snd}) end
+        MESSAGE:New(MessageText, Dur, nil, Clr):ToAll()
+        if MessageSound and Snd == true then
+            MessageSound:ToAll()
+        end
     end
 end
 
@@ -258,6 +267,54 @@ SCHEDULER:New(nil, function()
         SendMessage(MessageText, 10, true, false)
     end
 end, {}, MissionTime, 10)
+
+--- Show status message for client group
+--- @param Client table
+local function ShowStatus(Client)
+    if Debug then BASE:E({FileVer,ShowStatus=Client:GetPlayerName()}) end
+    local AbsTime = timer.getAbsTime()
+    local TimeLeft = MissionTime - (AbsTime - Time0)
+    local MessageText = 'MISSION END: Time left '..SecondsToString(TimeLeft)
+    if OverTime > 0 then
+        MessageText = MessageText..' + Overtime: '..SecondsToString(OverTime)
+    end
+    if ForceEndTime ~= nil then
+        local AllClientsLanded, ClientNamesInAir, ClientNamesInTaxi = IsAllClientsLanded()
+        local OverTimeLeft = ForceEndTime - AbsTime
+        MessageText = 'MISSION END: Overtime left '..SecondsToString(OverTimeLeft)..', expedite landing !'
+        if #ClientNamesInAir > 0 then
+            for _, ClientName in pairs(ClientNamesInAir) do
+                MessageText = MessageText..'\nPlayers airborne:'
+                MessageText = MessageText..'\n - '..ClientName
+            end
+        end
+        if #ClientNamesInTaxi > 0 then
+            for _, ClientName in pairs(ClientNamesInTaxi) do
+                MessageText = MessageText..'\nPlayers taxiing on ground:'
+                MessageText = MessageText..'\n - '..ClientName
+            end
+        end
+    end
+    SendMessage(MessageText, 15, true, false, Client)
+end
+
+--- Add menus for client group
+--- @param Client table
+local function AddGroupMenus(Client)
+    Client.MissionEndMenu = MENU_GROUP_COMMAND:New(Client:GetGroup(), 'MISSION END: Show status', nil, ShowStatus, Client)
+    if Debug then BASE:E({FileVer,'AddGroupMenu',Client=Client:GetPlayerName()}) end
+end
+
+-- Client joins slot event
+if F10Menu == true then
+    local Clients_Set = SET_CLIENT:New()
+    Clients_Set:FilterStart()
+    Clients_Set:ForEachClient(
+        function(Client)
+            Client:Alive(AddGroupMenus, Client)
+        end
+    )
+end
 
 -- EOF
 env.info('FILE: '..FileVer..' END')
