@@ -743,22 +743,18 @@ local function EnterVehicleCoord(RescueGroup, PilotGroup)
     local PilotCoord = PilotGroup:GetCoordinate()
     if RescueUnit ~= nil and RescueUnit:IsAlive() and not CoordInWater(PilotCoord) then
         local RescueType = RescueUnit:GetTypeName()
-        local EnterDistance = 3
+        local EnterDistance = 30
         local EnterAngle = 90
         if CSAR_Rescue_Air_Type_Angles[RescueType] ~= nil then
             EnterAngle = CSAR_Rescue_Air_Type_Angles[RescueType]
         end
         local Distance2D = routines.utils.get2DDist(PilotCoord, RescueCoord)
         local Heading = RescueGroup:GetHeading()
-        if RescueUnit:InAir() then
-            EnterDistance = 30
-            EnterAngle = 90
-        elseif Distance2D > 22 then
+        local Speed = RescueUnit:GetVelocityKNOTS()
+        if Speed < 1 and Distance2D > 22 and RescueUnit:InAir() == false then
             EnterDistance = 20
-            EnterAngle = 90
-        elseif Distance2D > 12 and RescueGroup:IsAirPlane() then
-            EnterDistance = 10
-            EnterAngle = EnterAngle - 10
+        elseif Speed < 1 and Distance2D > 8 and RescueUnit:InAir() == false then
+            EnterDistance = 8
         end
         local HeadingLeft = Heading - EnterAngle
         local HeadingRight = Heading + EnterAngle
@@ -906,7 +902,7 @@ SCHEDULER:New(nil, function()
 
                             if Debug then MESSAGE:New("DEBUG: CSAR:\nRescue: " .. CurRescueGroup:GetName() .. " Pilot: " .. CurPilotGroup:GetName() .. "\nInWater: " .. tostring(PilotInWater) .. " Distance2D: " .. Distance2D  .. " Distance3D: " .. Distance3D, 10):ToAll() end
                             -- Get in rescue
-                            if Distance2D <= 5 and RescueInAir == false or Distance3D <= CSAR_Rescue_Rope_Length and PilotInWater then
+                            if Distance2D <= 10 and RescueInAir == false or Distance3D <= CSAR_Rescue_Rope_Length and PilotInWater then
                                 if CurRescueGroup.stneCSAR.PilotCargo < CurRescueGroup.stneCSAR.PilotCargoMax then
                                     CurRescueGroup.stneCSAR.PilotCargo = CurRescueGroup.stneCSAR.PilotCargo + 1
                                     Random_Message_To_Group(CurRescueGroup, CSAR_Msg_GetIn_Pilot, true, true)
