@@ -49,7 +49,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201017'
+local Version = '201111'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -750,7 +750,10 @@ local function EnterVehicleCoord(RescueGroup, PilotGroup)
         end
         local Distance2D = routines.utils.get2DDist(PilotCoord, RescueCoord)
         local Heading = RescueGroup:GetHeading()
-        if Distance2D > 22 then
+        if RescueUnit:InAir() then
+            EnterDistance = 30
+            EnterAngle = 90
+        elseif Distance2D > 22 then
             EnterDistance = 20
             EnterAngle = 90
         elseif Distance2D > 12 and RescueGroup:IsAirPlane() then
