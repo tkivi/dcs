@@ -50,7 +50,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.RadioStation.lua'
-local Version = '201109'
+local Version = '201120'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -160,25 +160,26 @@ end
 --- @param Client table
 local function IsPlaneFC3(Client)
     local PlaneIsFC3 = false
-    local FC3PlaneTypes = {
-        'Su-25T', -- free plane (not actual FC3)
-        'MiG-29A',
-        'MiG-29S',
-        'Su-25',
-        'Su-27',
-        'Su-33',
-        'A-10A',
-        'F-15C',
-    }
-    if Client ~= nil and Client:IsAlive() then
+    if Client ~= nil and Client:IsAlive() and Client:GetPlayerName() ~= nil then
         local TypeName = Client:GetTypeName()
+        local FC3PlaneTypes = {
+            'Su-25T',   -- Free plane (not actual FC3)
+            'J-11A',    -- China asset
+            'MiG-29A',
+            'MiG-29S',
+            'Su-25',
+            'Su-27',
+            'Su-33',
+            'A-10A',
+            'F-15C',
+        }
         for _, FC3PlaneType in pairs(FC3PlaneTypes) do
             if TypeName == FC3PlaneType then
                 PlaneIsFC3 = true
             end
         end
+        if Debug then BASE:E({FileVer,IsPlaneFC3=PlaneIsFC3,Client=Client:GetPlayerName(),Type=TypeName}) end
     end
-    if Debug then BASE:E({FileVer,IsPlaneFC3=PlaneIsFC3,Client=Client:GetPlayerName()}) end
     return PlaneIsFC3
 end
 
@@ -192,10 +193,12 @@ local function MuteFC3Radio(Client)
     end
 end
 
--- Client joins slot event
+-- Clients set
 local Clients_Set = SET_CLIENT:New()
+Clients_Set:FilterStart()
+
+-- Client joins slot event
 if MuteFC3 == true then
-    Clients_Set:FilterStart()
     Clients_Set:ForEachClient(
         function(Client)
             Client:Alive(MuteFC3Radio, Client)
@@ -203,16 +206,12 @@ if MuteFC3 == true then
     )
 end
 
--- Clients set
-local Clients_Set = SET_CLIENT:New()
-Clients_Set:FilterStart()
-
 --- Is some of clients flying with FC3 plane
 local function IsSomePlaneFC3()
     local SomePlaneFC3 = false
     Clients_Set:ForEachClient(
         function(Client)
-            if Client ~= nil and Client:IsAlive() then
+            if Client ~= nil and Client:IsAlive() and Client:GetPlayerName() ~= nil then
                 if IsPlaneFC3(Client) == true then
                     SomePlaneFC3 = true
                 end
