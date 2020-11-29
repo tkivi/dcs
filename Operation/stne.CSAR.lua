@@ -42,6 +42,19 @@ local Cfg = {
     Pilot_Hypothermia = 1800,                   -- Pilot in water dies to hypothermia, in seconds
     Pilot_UnderAttack = 3600,                   -- Pilot under attack, in seconds
     Random_Enemy = 100,                         -- Random enemy probability, in percent
+
+    PilotLifePool = {                           -- Pilot life pool
+        --[1] = {                               -- RED coalition
+        --    Count = 100,                      -- Max lives
+        --    Return = 5,                       -- Return X lives / rescued pilot
+        --    Flag = 111,                       -- Raise flag when all lives has used
+        --},
+        [2] = {                                 -- BLUE coalition
+            Count = 100,                        -- Max lives
+            Return = 5,                         -- Return X lives / rescued pilot
+            Flag = 112,                         -- Raise flag when all lives has used
+        },
+    },
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
 --#################################################################################################
@@ -49,7 +62,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201111'
+local Version = '201129'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -77,6 +90,89 @@ local RndEnemy = Cfg.Random_Enemy
 local SoundGrd = Cfg.Sound_Guard
 local SoundNav = Cfg.Sound_Nav
 local SoundMsg = Cfg.Sound_Message
+local PilotLifePool = Cfg.PilotLifePool
+
+-- Prepare global variables
+if STNE == nil then STNE = {} end
+if STNE.Save == nil then STNE.Save = {} end
+if STNE.Save.Tables == nil then STNE.Save.Tables = {} end
+if STNE.Save.Tables.CSAR == nil then STNE.Save.Tables.CSAR = {} end
+for Coalition, _ in pairs(PilotLifePool) do
+    if PilotLifePool[Coalition] ~= nil and STNE.Save.Tables.CSAR[Coalition] == nil then
+        STNE.Save.Tables.CSAR[Coalition] = PilotLifePool[Coalition]['Count']
+    end
+end
+
+--- Add/remove pilot lives for coalition
+--- @param Coalition number
+--- @param AddLives boolean
+local function AddRemoveLives(Coalition, AddLives)
+    local IsAddLives = AddLives or false
+    if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+        if IsAddLives == true then
+            STNE.Save.Tables.CSAR[Coalition] = STNE.Save.Tables.CSAR[Coalition] + PilotLifePool[Coalition]['Return']
+        else
+            STNE.Save.Tables.CSAR[Coalition] = STNE.Save.Tables.CSAR[Coalition] - 1
+        end
+        if Debug then BASE:E({FileVer,'AddRemoveLives',AddLives=IsAddLives,Coalition=Coalition,Lives=STNE.Save.Tables.CSAR[Coalition]}) end
+        if STNE.Save.Tables.CSAR[Coalition] > 0 then
+            if Debug then BASE:E({FileVer,'AddRemoveLives',Flag=PilotLifePool[Coalition]['Flag'],Value='false'}) end
+            trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 0)
+        else
+            if Debug then BASE:E({FileVer,'AddRemoveLives',Flag=PilotLifePool[Coalition]['Flag'],Value='true'}) end
+            trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 1)
+        end
+    end
+end
+
+--- Pilot rescued message to all in coalition
+--- @param Coalition number
+local function PilotRescuedMsg(Coalition, RescueGroup)
+    if Debug then BASE:E({FileVer,PilotRescuedMsg=Coalition}) end
+    if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+        local PlayerName = RescueGroup:GetPlayerName()
+        if PlayerName == nil then
+            PlayerName = 'Unknown'
+        end
+        local MessageText = PlayerName..' saved a pilot and '
+        if Coalition == 1 then
+            MessageText = MessageText..'RED'
+        elseif Coalition == 2 then
+            MessageText = MessageText..'BLUE'
+        else
+            MessageText = MessageText..'NEUTRAL'
+        end
+        MessageText = MessageText..' now has '..STNE.Save.Tables.CSAR[Coalition]..' lives.'
+        MESSAGE:New(MessageText, 10):ToCoalition(Coalition)
+    end
+end
+
+--- Client enter plane message
+--- @param Client table
+local function EnterPlaneMsg(Client)
+    if Debug then BASE:E({FileVer,EnterPlaneMsg=Client:GetPlayerName()}) end
+    local Coalition = Client:GetCoalition()
+    if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+        local MessageText = 'ATTENTION!\n'
+        if Coalition == 1 then
+            MessageText = MessageText..'RED'
+        elseif Coalition == 2 then
+            MessageText = MessageText..'BLUE'
+        else
+            MessageText = MessageText..'NEUTRAL'
+        end
+        MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nSee briefing for details.'
+        MESSAGE:New(MessageText, 15):ToGroup(Client:GetGroup())
+    end
+end
+
+local Clients_Set = SET_CLIENT:New()
+Clients_Set:FilterStart()
+Clients_Set:ForEachClient(
+    function(Client)
+        Client:Alive(EnterPlaneMsg, Client)
+    end
+)
 
 -- Messages
 local CSAR_Msg_Unload_Pilot = {
@@ -192,8 +288,9 @@ local CSAR_Schedule_Timer = 10
 
 -- Eventhandler
 STNE_CSAR_EventHandler = EVENTHANDLER:New()
-STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_EJECTION)
 STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_BIRTH)
+STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_EJECTION)
+STNE_CSAR_EventHandler:HandleEvent(world.event.S_EVENT_PILOT_DEAD)
 
 -- Recover set group
 local CSAR_Recover_Set_Group = SET_GROUP:New()
@@ -598,6 +695,19 @@ function STNE_CSAR_EventHandler:OnEventBirth(EventData)
     end
 end
 
+-- PilotDead event
+function STNE_CSAR_EventHandler:OnEventPilotDead(EventData)
+    if Debug then MESSAGE:New("DEBUG: CSAR: EVENT: PilotDead", 10):ToAll() end
+    local CurUnit = EventData.IniUnit
+    if CurUnit ~= nil then
+        local IsPlayer = CurUnit:IsPlayer()
+        if Clients_Only and IsPlayer or not Clients_Only then
+            local FriendlyCoalition = EventData.IniCoalition
+            AddRemoveLives(FriendlyCoalition)
+        end
+    end
+end
+
 -- Eject event
 function STNE_CSAR_EventHandler:OnEventEjection(EventData)
     if Debug then MESSAGE:New("DEBUG: CSAR: EVENT: Eject", 10):ToAll() end
@@ -627,6 +737,8 @@ function STNE_CSAR_EventHandler:OnEventEjection(EventData)
             if FriendlyCoalition == 2 then
                 EnemyCoalition = 1
             end
+
+            AddRemoveLives(FriendlyCoalition)
 
             local CurBeaconsGuard, CurBeaconsNav = SpawnBeacon(Coord, true, false, FriendlyCoalition)
 
@@ -834,6 +946,8 @@ local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
                                 --CurSpawn:SpawnFromUnit(CurRescueGroup)
                                 CurRescueGroup.stneCSAR.PilotCargo = CurRescueGroup.stneCSAR.PilotCargo - 1
                             end
+                            AddRemoveLives(Coalition, true)
+                            PilotRescuedMsg(Coalition, CurRescueGroup)
                         else
                             local CurMsgTable = CSAR_Msg_Unload_Pilot_Failed
                             Random_Message_To_Group(CurRescueGroup, CurMsgTable, true, true)
