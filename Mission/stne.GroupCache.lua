@@ -11,10 +11,11 @@ local Cfg = {
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
     Debug = false,                                -- Debug mode, true/false
-    Prefix = {                                    -- GROUP prefix
+    Prefixes = {                                  -- GROUP prefixes
         'AO1',
         'AO2',
         'AO3',
+        --'Aerial',
     },
     SpawnDistance = 25000,                        -- Spawn group if client distance is lower than this, in meters
     CacheDistance = 35000,                        -- Cache group if client distance is higher than this, in meters
@@ -25,7 +26,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.GroupCache.lua'
-local Version = '201022'
+local Version = '201130'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -39,51 +40,18 @@ end
 -- Read config table
 BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
-local Prefix = Cfg.Prefix
+local Prefixes = Cfg.Prefixes
 local SpawnDistance = Cfg.SpawnDistance
 local CacheDistance = Cfg.CacheDistance
 local SchedulerTime = 10
 
--- Get groups to cache
 local CachedGroups = {}
-local PrefixSetGroup = SET_GROUP:New()
-PrefixSetGroup:FilterPrefixes(Prefix)
-PrefixSetGroup:FilterOnce()
-PrefixSetGroup:ForEachGroup(
-    function(PrefixGrp)
-        local GroupName = PrefixGrp:GetName()
-        local Coord = PrefixGrp:GetCoordinate()
-        local Template = PrefixGrp:GetTemplate()
-        local Units = Template.units
-        CachedGroups[GroupName] = {}
-        CachedGroups[GroupName].Coord = Coord
-        CachedGroups[GroupName].Units = Units
-        CachedGroups[GroupName].Cache = true
-        if Debug then BASE:E({FileVer,Cache='true',Group=GroupName,Units=#Units}) end
-    end
-)
-
---- Spawn group
---- @param GroupName string
-local function SpawnGroup(GroupName)
-    local Grp = GROUP:FindByName(GroupName)
-    if Grp ~= nil and not Grp:IsAlive() then
-        local GroupName = Grp:GetName()
-        local Template = Grp:GetTemplate()
-        local Units = CachedGroups[GroupName].Units
-        Template.units = Units
-        CachedGroups[GroupName].Cache = false
-        _DATABASE:Spawn(Template)
-        --SPAWN:NewFromTemplate(Template, GroupName, GroupName):InitKeepUnitNames(true):Spawn()
-        if Debug then BASE:E({FileVer,SpawnFromCache=GroupName,Units=#Units}) end
-    end
-end
 
 --- Cache group
 --- @param GroupName string
 local function CacheGroup(GroupName)
     local Grp = GROUP:FindByName(GroupName)
-    if Grp ~= nil and Grp:IsAlive() then
+    if Grp ~= nil and Grp:IsAlive() and Grp:IsActive() then
         local Template = Grp:GetTemplate()
         local Units = Template.units
         local UnitCount = 0
@@ -100,6 +68,45 @@ local function CacheGroup(GroupName)
         CachedGroups[GroupName].Cache = true
         Grp:Destroy()
         if Debug then BASE:E({FileVer,CacheGroup=GroupName,Units=#TempTable}) end
+    end
+end
+
+-- Get groups to cache
+local PrefixSetGroup = SET_GROUP:New()
+if #Prefixes > 0 then
+    PrefixSetGroup:FilterPrefixes(Prefixes)
+end
+PrefixSetGroup:FilterOnce()
+PrefixSetGroup:ForEachGroup(
+    function(PrefixGrp)
+        if PrefixGrp:IsActive() then
+            local GroupName = PrefixGrp:GetName()
+            local Coord = PrefixGrp:GetCoordinate()
+            local Template = PrefixGrp:GetTemplate()
+            local Units = Template.units
+            CachedGroups[GroupName] = {}
+            CachedGroups[GroupName].Coord = Coord
+            CachedGroups[GroupName].Units = Units
+            CachedGroups[GroupName].Cache = true
+            if Debug then BASE:E({FileVer,Cache='true',Group=GroupName,Units=#Units}) end
+            CacheGroup(GroupName)
+        end
+    end
+)
+
+--- Spawn group
+--- @param GroupName string
+local function SpawnGroup(GroupName)
+    local Grp = GROUP:FindByName(GroupName)
+    if Grp ~= nil and not Grp:IsAlive() then
+        --local GroupName = Grp:GetName()
+        local Template = Grp:GetTemplate()
+        local Units = CachedGroups[GroupName].Units
+        Template.units = Units
+        CachedGroups[GroupName].Cache = false
+        --_DATABASE:Spawn(Template)
+        SPAWN:NewFromTemplate(Template, GroupName, GroupName):InitKeepUnitNames(true):Spawn()
+        if Debug then BASE:E({FileVer,SpawnFromCache=GroupName,Units=#Units}) end
     end
 end
 
