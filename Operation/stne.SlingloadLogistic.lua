@@ -3,7 +3,7 @@ local Cfg = {
 --
 --  SlingloadLogistic
 --
---  Slingload cargo logistic with flag values.
+--  Slingload and internal cargo logistic with flag values.
 --
 --  Use with stne.SaveFlags.lua and stne.SaveTables.lua for persistent save.
 --
@@ -22,22 +22,48 @@ local Cfg = {
 --##  CONFIGURATION START  ##  DO NOT EDIT ABOVE THIS LINE  #######################################
 --#################################################################################################
     Debug = false,                          -- Debug mode, true/false
-    CargoTypes = {
+    CargoTypes = {                          -- Default slingload cargo types
         ['CARGO_FUEL_SMALL'] = {            -- STATIC cargo name
-            ['Cargo'] = 'FUEL',             -- Cargo type text
-            ['Spawn'] = 2,                  -- Spawn count for each zone
-            ['Value'] = 1,                  -- Cargo value
+            Cargo = 'FUEL',                 -- Cargo type text
+            Spawn = 4,                      -- Spawn count for each zone
+            Value = 1,                      -- Cargo value
         },
-        ['CARGO_FUEL_LARGE'] = {    ['Cargo']='FUEL',     ['Spawn']=1,   ['Value']=2,   },
-        ['CARGO_AMMO_SMALL'] = {    ['Cargo']='AMMO',     ['Spawn']=2,   ['Value']=1,   },
-        ['CARGO_AMMO_LARGE'] = {    ['Cargo']='AMMO',     ['Spawn']=1,   ['Value']=2,   },
-        ['CARGO_REPAIR_SMALL'] = {  ['Cargo']='REPAIR',   ['Spawn']=2,   ['Value']=1,   },
-        ['CARGO_REPAIR_LARGE'] = {  ['Cargo']='REPAIR',   ['Spawn']=1,   ['Value']=2,   },
+        ['CARGO_FUEL_LARGE'] = {    Cargo='FUEL',     Spawn=2,   Value=2,   },
+        ['CARGO_AMMO_SMALL'] = {    Cargo='AMMO',     Spawn=4,   Value=1,   },
+        ['CARGO_AMMO_LARGE'] = {    Cargo='AMMO',     Spawn=2,   Value=2,   },
+        ['CARGO_REPAIR_SMALL'] = {  Cargo='REPAIR',   Spawn=4,   Value=1,   },
+        ['CARGO_REPAIR_LARGE'] = {  Cargo='REPAIR',   Spawn=2,   Value=2,   },
+    },
+    InternalCargoTypes = {                  -- Default internal cargo types
+        [1] = {                             -- Cargo SIDE, 1 = Red
+            ['FUEL'] = 10,                  -- ['Cargo type text'] = cargo value
+            ['AMMO'] = 10,
+            ['REPAIR'] = 10,
+        },
+        [2] = {                             -- Cargo SIDE, 2 = Blue
+            ['FUEL'] = 10,                  -- ['Cargo type text'] = cargo value
+            ['AMMO'] = 10,
+            ['REPAIR'] = 10,
+        },
     },
     CargoZones = {
-        ['SlingZone1'] = {                  -- ZONE name
-            ['Flag'] = 10001,               -- Flag, see possible values from description
-            ['Request'] = {
+        ['CARGO TURKEYFARP'] = {            -- ZONE name
+            Flag = 7001,                    -- Flag, see possible values from description
+            --[[
+            InternalCargo = {               -- Override default internal cargo
+                [1] = {                     -- Override SIDE, 1 = Red
+                    ['REPAIR'] = 20,        -- Override ['Cargo type text'] = cargo value
+                },
+                [2] = {                     -- Override SIDE, 2 = Blue
+                    ['FUEL'] = 40,          -- Override ['Cargo type text'] = cargo value
+                    ['TOOLS'] = 30,         -- Override ['Cargo type text'] = cargo value
+                },
+            },
+            SlingloadCargo = {              -- Override default slingload cargo
+                ['CARGO_FUEL_LARGE'] = 4,   -- Override ['STATIC cargo name'] = Spawn count for zone
+            },
+            ]]
+            Request = {
                 [1] = {                     -- Request SIDE, 1 = Red
                     ['REPAIR'] = 2,         -- Request cargo type text and value
                     ['FUEL'] = 2,           -- Request cargo type text and value
@@ -48,8 +74,30 @@ local Cfg = {
                 },
             },
         },
-        ['SlingZone2'] = {   ['Flag']=10002,   ['Request']={   [1]={   ['REPAIR']=2,   ['FUEL']=2,},   [2]={   ['FUEL']=2,   ['AMMO']=2,   },},},
-        ['SlingZone3'] = {   ['Flag']=10003,   ['Request']={   [1]={   ['REPAIR']=2,   ['FUEL']=2,},   [2]={   ['FUEL']=2,   ['AMMO']=2,   },},},
+        ['CARGO LEBANONFARP'] = {     Flag=7002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['CARGO ISRAELFARP'] = {      Flag=7003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['CARGO KING HUSSEIN'] = {    Flag=7004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['CARGO INCIRLIK'] = {        Flag=7005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['CARGO RAMAT DAVID'] = {     Flag=7006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO MINAKH'] = {      Flag=1001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO ALEPPO'] = {      Flag=1002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO KUWEIRES'] = {    Flag=1003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO JIRAH'] = {       Flag=1004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO ABUDUHUR'] = {    Flag=1005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO1 CARGO PATRIOT'] = {     Flag=1006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+		['AO1 CARGO HAWK'] = {        Flag=1007,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
+		['AO3 CARGO BASSELASSAD'] = { Flag=3001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO3 CARGO PATRIOT'] = {     Flag=3002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+		['AO3 CARGO HAWK'] = {        Flag=3003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
+		['AO4 CARGO HAMA'] = {        Flag=4001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO4 CARGO ALQUSAYR'] = {    Flag=4002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO4 CARGO ROADBASE'] = {    Flag=4003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO5 CARGO ROADBASE'] = {    Flag=5001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO6 CARGO KHALKHALAH'] = {  Flag=6001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO6 CARGO DAMASCUS'] = {    Flag=6002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO6 CARGO MEZZEH'] = {      Flag=6003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+		['AO6 CARGO PATRIOT'] = {     Flag=6004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+		['AO6 CARGO HAWK'] = {        Flag=6005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
     },
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
@@ -58,7 +106,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SlingloadLogistic.lua'
-local Version = '201108'
+local Version = '201214'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -73,6 +121,7 @@ end
 BASE:E({FileVer,Cfg=Cfg})
 local Debug = Cfg.Debug
 local CargoTypes = Cfg.CargoTypes
+local InternalCargoTypes = Cfg.InternalCargoTypes
 local CargoZones = Cfg.CargoZones
 
 -- Prepare global variables
@@ -81,9 +130,33 @@ if STNE.Save == nil then STNE.Save = {} end
 if STNE.Save.Tables == nil then STNE.Save.Tables = {} end
 if STNE.Save.Tables.SlingloadLogistic == nil then STNE.Save.Tables.SlingloadLogistic = {} end
 
+-- Eventhandler
+if STNE == nil then STNE = {} end
+if STNE.EventHandler == nil then STNE.EventHandler = {} end
+if STNE.EventHandler.SlingloadLogistic == nil then STNE.EventHandler.SlingloadLogistic = {} end
+STNE.EventHandler.SlingloadLogistic = EVENTHANDLER:New()
+STNE.EventHandler.SlingloadLogistic:HandleEvent(world.event.S_EVENT_TAKEOFF)
+
 -- Local variables
 local Debug2 = false
 local SlingloadMarkers = {}
+local InternalCargoCapacity = {
+    ['UH-1H'] = 1,
+    ['Mi-8MT'] = 2,
+    ['Yak-52'] = 1,
+    ['TF-51D'] = 1,
+    ['L-39C'] = 1,
+    ['L-39ZA'] = 1,
+    ['C-101EB'] = 1,
+    ['C-101CC'] = 1,
+}
+
+-- Combine config tables
+for ZoneName, _ in pairs(CargoZones) do
+    if CargoZones[ZoneName]['InternalCargo'] == nil then
+        CargoZones[ZoneName]['InternalCargo'] = UTILS.DeepCopy(InternalCargoTypes)
+    end
+end
 
 -- Set static for spawned cargo
 local Cargo_Prefix = {}
@@ -148,8 +221,16 @@ local function SpawnCargoInZone(ZoneName, Coalition)
                 local CargoCoalition = CargoObj:GetCoalition()
                 if Coalition == CargoCoalition then
                     local SpawnCount = CargoData.Spawn
-                    for i = 1, SpawnCount, 1 do
-                        table.insert(SpawnTable, CargoName)
+                    if CargoZones[ZoneName]['SlingloadCargo'] ~= nil then
+                        SpawnCount = 0
+                        if CargoZones[ZoneName]['SlingloadCargo'][CargoName] ~= nil then
+                            SpawnCount = CargoZones[ZoneName]['SlingloadCargo'][CargoName]
+                        end
+                    end
+                    if SpawnCount > 0 then
+                        for i = 1, SpawnCount, 1 do
+                            table.insert(SpawnTable, CargoName)
+                        end
                     end
                 end
             end
@@ -185,7 +266,8 @@ local function GetStaticName(StaticName)
 end
 
 --- Add zone cached cargo values to counted cargo
---- @param CargoTable table
+--- @param CountedCargo table
+--- @param ZoneName string
 local function AddCachedCargo(CountedCargo, ZoneName)
     if STNE.Save.Tables.SlingloadLogistic[ZoneName] ~= nil then
         if Debug then BASE:E({FileVer,'AddCachedCargo',CountedCargo=CountedCargo,CachedCargo=STNE.Save.Tables.SlingloadLogistic[ZoneName]}) end
@@ -236,9 +318,9 @@ end
 --- @param Coalition number
 local function CreateMarkerText(CountedCargo, ZoneName, Request, Coalition)
     if Debug then BASE:E({FileVer,'CreateMarkerText'}) end
-    local MarkerText = 'Available slingload cargo:'
+    local MarkerText = 'Available slingload cargo / internal cargo:'
     if Request then
-        MarkerText = 'Request slingload cargo:'
+        MarkerText = 'Request cargo:'
         for ZCargo, ZValue in pairs(CargoZones[ZoneName]['Request'][Coalition]) do
             if CountedCargo[ZCargo] ~= nil then
                 MarkerText = MarkerText..'\n'..tostring(ZCargo)..' = '..tostring(CountedCargo[ZCargo])..' / '..ZValue
@@ -251,7 +333,18 @@ local function CreateMarkerText(CountedCargo, ZoneName, Request, Coalition)
             MarkerText = MarkerText..'\nnone'
         else
             for Cargo, Value in pairs(CountedCargo) do
-                MarkerText = MarkerText..'\n'..tostring(Cargo)..' = '..tostring(Value)
+                local InternalCargo = 0
+                if CargoZones[ZoneName]['InternalCargo'] ~= nil and CargoZones[ZoneName]['InternalCargo'][Coalition] ~= nil and CargoZones[ZoneName]['InternalCargo'][Coalition][Cargo] ~= nil then
+                    InternalCargo = CargoZones[ZoneName]['InternalCargo'][Coalition][Cargo]
+                end
+                MarkerText = MarkerText..'\n'..tostring(Cargo)..' = '..tostring(Value)..' / '..tostring(InternalCargo)
+            end
+            if CargoZones[ZoneName]['InternalCargo'] ~= nil and CargoZones[ZoneName]['InternalCargo'][Coalition] ~= nil then
+                for Cargo, Value in pairs(CargoZones[ZoneName]['InternalCargo'][Coalition]) do
+                    if CountedCargo[Cargo] == nil then
+                        MarkerText = MarkerText..'\n'..tostring(Cargo)..' = '..tostring(0)..' / '..tostring(Value)
+                    end
+                end
             end
         end
     end
@@ -319,12 +412,9 @@ local function CreateZoneCargoTable(ZoneName)
             if CargoObj ~= nil and CargoObj:IsAlive() then
                 local CargoName = CargoObj:GetName()
                 local CargoCoord = CargoObj:GetCoordinate()
-                local CargoHeight = CargoCoord.y
                 local CargoX = math.floor(CargoCoord.x)
                 local CargoY = math.floor(CargoCoord.y)
                 local CargoZ = math.floor(CargoCoord.z)
-                local LandHeight = CargoCoord:GetLandHeight()
-                local AboveGround = CargoHeight - LandHeight
                 if CargoCoords[CargoName] == nil then
                     CargoCoords[CargoName] = {}
                     CargoCoords[CargoName]['x'] = CargoX
@@ -395,6 +485,258 @@ local function RefreshMarker(CountedCargo, ZoneName, Request, Coalition)
         end
         if SlingloadMarkers[ZoneName..'2'] ~= nil then
             SlingloadMarkers[ZoneName..'2']:Remove(0)
+        end
+    end
+end
+
+--- Is cargo plane ready to load/unload
+--- @param Client table
+local function IsReadyToLoadInternalCargo(Client)
+    local IsReady = false
+    if Client ~= nil and Client:IsAlive() and Client:InAir() == false and Client:GetVelocityKNOTS() < 1 then
+        IsReady = true
+    end
+    if Debug then BASE:E({FileVer,IsReadyToLoad=IsReady,Client=Client:GetPlayerName()}) end
+    return IsReady
+end
+
+--- Get internal cargo zone for client
+--- @param Client table
+--- @param LoadCargo boolean
+local function GetInternalCargoZone(Client, LoadCargo)
+    local IsClientReady = IsReadyToLoadInternalCargo(Client)
+    if Debug then BASE:E({FileVer,'GetInternalCargoZone',IsClientReady=IsClientReady,LoadCargo=LoadCargo,Client=Client:GetPlayerName()}) end
+    local CargoZoneName = nil
+    if IsClientReady then
+        for ZoneName, ZoneData in pairs(CargoZones) do
+            local ZoneObj = ZONE:FindByName(ZoneName)
+            if ZoneObj then
+                if Client:IsInZone(ZoneObj) then
+                    local FlagValue = trigger.misc.getUserFlag(ZoneData.Flag)
+                    local Coalition = Client:GetCoalition()
+                    if Coalition == 1 then
+                        if (LoadCargo and FlagValue == 1) or (not LoadCargo and FlagValue > 0) then
+                            CargoZoneName = ZoneName
+                        end
+                    elseif Coalition == 2 then
+                        if (LoadCargo and FlagValue == 2) or (not LoadCargo and FlagValue > 0) then
+                            CargoZoneName = ZoneName
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return CargoZoneName
+end
+
+--- Can client load internal cargo
+--- @param Client table
+local function CanLoadCargo(Client)
+    if Debug then BASE:E({FileVer,'CanLoadCargo',Client=Client:GetPlayerName()}) end
+    local PlaneType = Client:GetTypeName()
+    local LoadedCargoSpace = 0
+    local CargoSpace = 0
+    if Client.InternalCargo == nil then
+        Client.InternalCargo = {}
+    end
+    for _, Value in pairs(Client.InternalCargo) do
+        LoadedCargoSpace = LoadedCargoSpace + Value
+    end
+    if InternalCargoCapacity[PlaneType] ~= nil then
+        CargoSpace = InternalCargoCapacity[PlaneType]
+    end
+    if CargoSpace > LoadedCargoSpace then
+        return true
+    end
+    return false
+end
+
+--- Unload internal cargo
+--- @param Client table
+local function UnloadInternalCargo(Client)
+    local ZoneName = GetInternalCargoZone(Client, false)
+    if ZoneName ~= nil then
+        if Debug then BASE:E({FileVer,UnloadInternalCargo=ZoneName,Client=Client:GetPlayerName()}) end
+        if Client.InternalCargo ~= nil and not IsEmptyTable(Client.InternalCargo) then
+            local FlagValue = trigger.misc.getUserFlag(CargoZones[ZoneName]['Flag'])
+            local MessageText = 'UNLOAD INTERNAL CARGO:\n'
+            if FlagValue == 1 or FlagValue == 2 then
+                if CargoZones[ZoneName]['InternalCargo'] == nil then
+                    CargoZones[ZoneName]['InternalCargo'] = {}
+                end
+                if CargoZones[ZoneName]['InternalCargo'][FlagValue] == nil then
+                    CargoZones[ZoneName]['InternalCargo'][FlagValue] = {}
+                end
+                for Cargo, Value in pairs(Client.InternalCargo) do
+                    if CargoZones[ZoneName]['InternalCargo'][FlagValue][Cargo] == nil then
+                        CargoZones[ZoneName]['InternalCargo'][FlagValue][Cargo] = Value
+                    else
+                        CargoZones[ZoneName]['InternalCargo'][FlagValue][Cargo] = CargoZones[ZoneName]['InternalCargo'][FlagValue][Cargo] + Value
+                    end
+                    MessageText = MessageText..'\n'..Cargo..' = '..Value
+                end
+            else
+                if STNE.Save.Tables.SlingloadLogistic[ZoneName] == nil then
+                    STNE.Save.Tables.SlingloadLogistic[ZoneName] = {}
+                end
+                for Cargo, Value in pairs(Client.InternalCargo) do
+                    if STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] == nil then
+                        STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] = Value
+                    else
+                        STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] = STNE.Save.Tables.SlingloadLogistic[ZoneName][Cargo] + Value
+                    end
+                    MessageText = MessageText..'\n'..Cargo..' = '..Value
+                end
+            end
+            MessageText = MessageText..'\n '
+            MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+            Client.InternalCargo = {}
+            Client.InternalCargoMenuUnload:Remove()
+            if Client.InternalCargoMenuLoad ~= nil then
+                for Cargo, _ in pairs(Client.InternalCargoMenuLoad) do
+                    Client.InternalCargoMenuLoad[Cargo]:Remove()
+                end
+            end
+        end
+    else
+        local MessageText = 'CANNOT UNLOAD INTERNAL CARGO HERE'
+        MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+    end
+end
+
+--- Load internal cargo
+--- @param ClientData table
+local function LoadInternalCargo(ClientData)
+    local Client = ClientData[1]
+    local LCargo = ClientData[2]
+    local ZoneName = GetInternalCargoZone(Client, true)
+    if ZoneName ~= nil then
+        if Debug then BASE:E({FileVer,LoadInternalCargo=ZoneName,Client=Client:GetPlayerName()}) end
+        local Coalition = Client:GetCoalition()
+        if CanLoadCargo(Client) then
+            if CargoZones[ZoneName]['InternalCargo'][Coalition][LCargo] >= 1 then
+                CargoZones[ZoneName]['InternalCargo'][Coalition][LCargo] = CargoZones[ZoneName]['InternalCargo'][Coalition][LCargo] - 1
+                if Client.InternalCargo[LCargo] == nil then
+                    Client.InternalCargo[LCargo] = 0
+                end
+                Client.InternalCargo[LCargo] = Client.InternalCargo[LCargo] + 1
+                local MessageText = 'INTERNAL CARGO LOADED:\n\n'..LCargo..' = '..tostring(1)..'\n '
+                MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+                Client.InternalCargoMenuUnload = MENU_GROUP_COMMAND:New(Client:GetGroup(), 'Unload all cargo', Client.InternalCargoMenu, UnloadInternalCargo, Client)
+            else
+                local MessageText = 'NO INTERNAL CARGO TO LOAD: '..LCargo
+                MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+            end
+        else
+            local MessageText = 'INTERNAL CARGO SPACE FULL'
+            MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+            for Cargo, _ in pairs(Client.InternalCargoMenuLoad) do
+                Client.InternalCargoMenuLoad[Cargo]:Remove()
+            end
+        end
+    else
+        local MessageText = 'CANNOT LOAD INTERNAL CARGO'
+        MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+    end
+end
+
+--- Add load cargo menus for client
+--- @param Client table
+--- @param CargoOnGround table
+local function AddLoadCargoMenus(Client, CargoOnGround)
+    if Debug then BASE:E({FileVer,'AddLoadCargoMenus',Client=Client:GetPlayerName()}) end
+    if Client.InternalCargoMenuLoad == nil then
+        Client.InternalCargoMenuLoad = {}
+    end
+    for Cargo, _ in pairs(Client.InternalCargoMenuLoad) do
+        Client.InternalCargoMenuLoad[Cargo]:Remove()
+    end
+    if CargoOnGround ~= nil and CanLoadCargo(Client) then
+        for Cargo, _ in pairs(CargoOnGround) do
+            Client.InternalCargoMenuLoad[Cargo] = MENU_GROUP_COMMAND:New(Client:GetGroup(), 'Load cargo: '..Cargo, Client.InternalCargoMenu, LoadInternalCargo, {Client,Cargo})
+        end
+    end
+end
+
+--- Get available internal cargo for client
+--- @param Client table
+local function GetAvailableInternalCargo(Client)
+    if Debug then BASE:E({FileVer,'GetAvailableInternalCargo',Client=Client:GetPlayerName()}) end
+    local CargoTable = {}
+    local ZoneName = GetInternalCargoZone(Client, true)
+    if ZoneName ~= nil then
+        local Coalition = Client:GetCoalition()
+        if CargoZones[ZoneName]['InternalCargo'] ~= nil and CargoZones[ZoneName]['InternalCargo'][Coalition] ~= nil then
+            for Cargo, Value in pairs(CargoZones[ZoneName]['InternalCargo'][Coalition]) do
+                if Value ~= nil and Value > 0 then
+                    CargoTable[Cargo] = Value
+                end
+            end
+        end
+    end
+    return CargoTable
+end
+
+--- Show internal cargo status message for client group
+--- @param Client table
+local function ShowInternalCargo(Client)
+    if Debug then BASE:E({FileVer,'ShowInternalCargo',Client=Client:GetPlayerName()}) end
+    local PlaneType = Client:GetTypeName()
+    local CargoSpace = 0
+    if InternalCargoCapacity[PlaneType] ~= nil then
+        CargoSpace = InternalCargoCapacity[PlaneType]
+    end
+    local MessageText = '******************************\nINTERNAL CARGO SPACE: '..CargoSpace..'\n******************************\n'
+    if Client.InternalCargo ~= nil and not IsEmptyTable(Client.InternalCargo) then
+        for Cargo, Value in pairs(Client.InternalCargo) do
+            MessageText = MessageText..'\n'..Cargo..' = '..Value
+        end
+    else
+        MessageText = MessageText..'\nNo internal cargo'
+    end
+    local CargoOnGround = GetAvailableInternalCargo(Client)
+    if not IsEmptyTable(CargoOnGround) then
+        MessageText = MessageText..'\n\n******************************\nCARGO ON GROUND:\n******************************\n'
+        for Cargo, Value in pairs(CargoOnGround) do
+            MessageText = MessageText..'\n'..Cargo..' = '..Value
+        end
+        AddLoadCargoMenus(Client, CargoOnGround)
+    end
+    MessageText = MessageText..'\n '
+    MESSAGE:New(MessageText, 15, nil, true):ToGroup(Client:GetGroup())
+end
+
+--- Add menus for client group
+--- @param Client table
+local function AddGroupMenus(Client)
+    if Debug then BASE:E({FileVer,'AddGroupMenus',Client=Client:GetPlayerName()}) end
+    Client.InternalCargo = {}
+    Client.InternalCargoMenu = MENU_GROUP:New(Client:GetGroup(), 'Internal Cargo')
+    Client.InternalCargoMenuStatus = MENU_GROUP_COMMAND:New(Client:GetGroup(), 'Internal cargo / Cargo on ground', Client.InternalCargoMenu, ShowInternalCargo, Client)
+end
+
+-- Client joins slot event
+local Clients_Set = SET_CLIENT:New()
+Clients_Set:FilterStart()
+Clients_Set:ForEachClient(
+    function(Client)
+        Client:Alive(AddGroupMenus, Client)
+    end
+)
+
+-- OnEventTakeoff event
+function STNE.EventHandler.SlingloadLogistic:OnEventTakeoff(EventData)
+    if Debug then BASE:E({FileVer,'OnEventTakeoff'}) end
+    BASE:E(EventData)
+    if EventData.IniUnitName ~= nil then
+        local Client = CLIENT:FindByName(EventData.IniUnitName)
+        if Client ~= nil then
+            if Client.InternalCargoMenuLoad ~= nil then
+                for Cargo, _ in pairs(Client.InternalCargoMenuLoad) do
+                    Client.InternalCargoMenuLoad[Cargo]:Remove()
+                end
+            end
         end
     end
 end
