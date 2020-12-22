@@ -17,6 +17,7 @@ local Cfg = {
         'GroupPrefixOne',
         'GroupPrefixTwo',
     },
+    TemplateFormat = false,                         -- true = template format for ME groups, false = custom format for spawned groups
     ResetSave = 667,                                -- Flag to reset save data
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
@@ -25,7 +26,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveGroups.lua'
-local Version = '201022'
+local Version = '201217'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -42,12 +43,14 @@ local Debug = Cfg.Debug
 local SaveFolder = Cfg.Folder
 local SaveTimer = Cfg.Timer
 local PrefixGroup = Cfg.Prefix
+local TemplateFormat = Cfg.TemplateFormat or false
 local ResetSave = Cfg.ResetSave
 
 -- Prepare global variables
 if STNE == nil then STNE = {} end
 if STNE.Save == nil then STNE.Save = {} end
 if STNE.Flags == nil then STNE.Flags = {} end
+if STNE.API == nil then STNE.API = {} end
 STNE.Flags.ResetSaveGroups = ResetSave
 
 -- Prepare local save variables
@@ -68,6 +71,53 @@ if io then
     end
 end
 
+--- Get template name from group name without #index
+--- @param GroupName string
+local function GetTemplateName(GroupName)
+    local TemplateName = GroupName
+    local GroupObj = GROUP:FindByName(GroupName)
+    if GroupObj ~= nil and GroupObj['stne'] ~= nil and GroupObj['stne']['SaveGroups'] ~= nil and GroupObj['stne']['SaveGroups']['Template'] ~= nil then
+        TemplateName = GroupObj['stne']['SaveGroups']['Template']
+    else
+        if string.find(GroupName, '#') ~= nil then
+            TemplateName = UTILS.Split(GroupName, '#')[1]
+        end
+    end
+    if Debug then BASE:E({FileVer,'GetTemplateName',GroupName=GroupName,TemplateName=TemplateName}) end
+    return TemplateName
+end
+
+--- Get group name without #index
+--- @param GroupName string
+local function GetGroupName(GroupName)
+    local ReturnName = GroupName
+    if string.find(GroupName, '#') ~= nil then
+        ReturnName = UTILS.Split(GroupName, '#')[1]
+    end
+    if Debug then BASE:E({FileVer,'GetGroupName',GroupName=GroupName,ReturnName=ReturnName}) end
+    return ReturnName
+end
+
+--- API: stne.SaveGroups.lua: Init group for save
+--- @param GroupObj table
+--- @param TemplateName string
+function STNE.API.InitGroupForSave(GroupObj, TemplateName)
+    local GroupName = GroupObj:GetName()
+    if TemplateName == nil then
+        TemplateName = GetTemplateName(GroupName)
+    end
+    if Debug then BASE:E({FileVer,'InitGroup',Group=GroupName}) end
+    if GroupObj['stne'] == nil then GroupObj['stne'] = {} end
+    if GroupObj['stne']['SaveGroups'] == nil then GroupObj['stne']['SaveGroups'] = {} end
+    if GroupObj['stne']['SaveGroups']['Template'] == nil then
+        GroupObj['stne']['SaveGroups']['Template'] = TemplateName
+    end
+    if GroupObj['stne']['SaveGroups']['Units'] == nil then
+        GroupObj['stne']['SaveGroups']['Units'] = GroupObj:GetUnits()
+    end
+    return GroupObj['stne']['SaveGroups']['Units']
+end
+
 -- Remove old groups and spawn new ones if group save data exists
 if STNE.Save.Groups ~= nil then
     if Debug then BASE:E({FileVer,'STNE.Save.Groups savedata found, removing old groups'}) end
@@ -82,7 +132,27 @@ if STNE.Save.Groups ~= nil then
     -- Spawn groups from savedata
     for GroupName, Template in pairs(STNE.Save.Groups) do
         if Debug then BASE:E({FileVer,'Spawn',Group=GroupName}) end
-        _DATABASE:Spawn(Template)
+        if TemplateFormat then
+            _DATABASE:Spawn(Template)
+        else
+            local TemplateName = Template['Template']
+            local Units = Template['Units']
+            local CoordZ = Template['Z']
+            local CoordX = Template['X']
+            local CoordY = Template['Y']
+            local SpawnObj = SPAWN:NewWithAlias(TemplateName, GroupName)
+            SpawnObj:OnSpawnGroup(
+                function(SpawnGrp)
+                    local GroupUnits = STNE.API.InitGroupForSave(SpawnGrp, TemplateName)
+                    for Key, Unit in UTILS.spairs(GroupUnits) do
+                        if Units[Key] == false then
+                            Unit:Destroy()
+                        end
+                    end
+                end
+            )
+            SpawnObj:SpawnFromVec3({z=CoordZ,x=CoordX,y=CoordY})
+        end
     end
 else
     if Debug then BASE:E({FileVer,'STNE.Save.Groups savedata not found'}) end
@@ -138,6 +208,75 @@ local function TableToSave(Tbl)
     return tostring(ReT)
 end
 
+--- Save group, template format
+--- @param Grp table
+local function SaveGroupAsTemplate(Grp)
+    if Debug then BASE:E({FileVer,'SaveGroupAsTemplate'}) end
+    local TempTable = {}
+    local UnitCount = 0
+    local GrpName = Grp:GetName()
+    local GrpTemplate = Grp:GetTemplate()
+    local GrpUnits = Grp:GetUnits()
+    for UnitID, Unit in UTILS.spairs(GrpUnits) do
+        if Unit:IsAlive() then
+            UnitCount = UnitCount + 1
+            if Debug then BASE:E({FileVer,Group=GrpName,UnitID=UnitID,Alive='true',NewID=UnitCount}) end
+            table.insert(TempTable, UnitCount, GrpTemplate.units[UnitID])
+            -- Get new position and heading for unit
+            local UnitCoord = Unit:GetCoordinate()
+            local UnitHdg = Unit:GetHeading()
+            TempTable[UnitCount].x = UnitCoord.x
+            TempTable[UnitCount].y = UnitCoord.z
+            -- Moose heading fix GROUP:Respawn -> _Heading
+            local function HeadingFix(Heading)
+                local Hdg
+                if Heading <= 180 then
+                    Hdg = math.rad(Heading)
+                else
+                    Hdg = -math.rad(360 - Heading)
+                end
+                return Hdg
+            end
+            TempTable[UnitCount].heading = HeadingFix(UnitHdg)
+        else
+            if Debug then BASE:E({FileVer,Group=GrpName,UnitID=UnitID,Alive='false'}) end
+        end
+    end
+    GrpTemplate.units = TempTable
+    STNE.Save.Groups[GrpName] = GrpTemplate
+end
+
+--- Save group, custom type
+--- @param Grp table
+local function SaveGroupAsCustom(Grp)
+    if Debug then BASE:E({FileVer,'SaveGroupAsCustom'}) end
+    local GroupName = Grp:GetName()
+    local TemplateName = GetTemplateName(GroupName)
+    local GroupCoord = Grp:GetCoordinate()
+    local GroupHdg = Grp:GetHeading()
+    local GroupCoordX = GroupCoord.x
+    local GroupCoordY = GroupCoord.y
+    local GroupCoordZ = GroupCoord.z
+    local GroupUnits = STNE.API.InitGroupForSave(Grp)
+    local UnitTable = {}
+    for _, Unit in UTILS.spairs(GroupUnits) do
+        if Unit ~= nil and Unit:IsAlive() then
+            table.insert(UnitTable, true)
+        else
+            table.insert(UnitTable, false)
+        end
+    end
+    GroupName = GetGroupName(GroupName)
+    STNE.Save.Groups[GroupName] = {
+        Template = TemplateName,
+        Units = UnitTable,
+        Heading = GroupHdg,
+        Z = GroupCoordZ,
+        X = GroupCoordX,
+        Y = GroupCoordY,
+    }
+end
+
 --- Prepare groups data for save
 STNE.Save.Groups = {}
 local function PrepareGroups()
@@ -149,48 +288,11 @@ local function PrepareGroups()
     Set_Group:FilterOnce()
     Set_Group:ForEachGroupAlive(
         function(Grp)
-            local TempTable = {}
-            local UnitCount = 0
-            local GrpName = Grp:GetName()
-            local GrpTemplate = Grp:GetTemplate()
-            local GrpCoord = Grp:GetCoordinate()
-            local GrpUnits = Grp:GetUnits()
-            for UnitID, Unit in UTILS.spairs(GrpUnits) do
-                if Unit:IsAlive() then
-                    UnitCount = UnitCount + 1
-                    if Debug then BASE:E({FileVer,Group=GrpName,UnitID=UnitID,Alive='true',NewID=UnitCount}) end
-                    table.insert(TempTable, UnitCount, GrpTemplate.units[UnitID])
-                    -- Get new position and heading for unit
-                    local UnitCoord = Unit:GetCoordinate()
-                    local UnitHdg = Unit:GetHeading()
-                    TempTable[UnitCount].x = UnitCoord.x
-                    TempTable[UnitCount].y = UnitCoord.z
-                    -- Moose heading fix GROUP:Respawn -> _Heading
-                    local function HeadingFix(Heading)
-                        local Hdg
-                        if Heading <= 180 then
-                            Hdg = math.rad(Heading)
-                        else
-                            Hdg = -math.rad(360 - Heading)
-                        end
-                        return Hdg 
-                    end     
-                    TempTable[UnitCount].heading = HeadingFix(UnitHdg)
-                else
-                    if Debug then BASE:E({FileVer,Group=GrpName,UnitID=UnitID,Alive='false'}) end
-                end
+            if TemplateFormat then
+                SaveGroupAsTemplate(Grp)
+            else
+                SaveGroupAsCustom(Grp)
             end
-            GrpTemplate.units = TempTable
-            --local TmpCoord = COORDINATE:New(GrpTemplate.x, 0, GrpTemplate.y)
-            --local Distance = GrpCoord:Get2DDistance(TmpCoord)
-            --if Distance >= 2 then
-            --    if GrpTemplate.uncontrolled ~= nil then
-            --        if Debug then BASE:E({FileVer,Uncontrolled='false',Group=GrpName,Distance=Distance}) end
-            --        GrpTemplate.uncontrolled = false
-            --    end
-            --end
-            --GrpTemplate.lateActivation = false
-            STNE.Save.Groups[GrpName] = GrpTemplate
         end
     )
 end
