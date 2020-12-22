@@ -65,7 +65,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201216'
+local Version = '201219'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -200,17 +200,17 @@ local function EnterPlaneMsg(Client)
             MessageText = MessageText..'NEUTRAL'
         end
         MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nSee briefing for details.'
-        MESSAGE:New(MessageText, 15):ToGroup(Client:GetGroup())
+        MESSAGE:New(MessageText, 30):ToGroup(Client:GetGroup())
     end
 end
 
-local Clients_Set = SET_CLIENT:New()
-Clients_Set:FilterStart()
-Clients_Set:ForEachClient(
-    function(Client)
-        Client:Alive(EnterPlaneMsg, Client)
-    end
-)
+--local Clients_Set = SET_CLIENT:New()
+--Clients_Set:FilterStart()
+--Clients_Set:ForEachClient(
+--    function(Client)
+--        Client:Alive(EnterPlaneMsg, Client)
+--    end
+--)
 
 -- Messages
 local CSAR_Msg_Unload_Pilot = {
@@ -570,7 +570,7 @@ end
 local function SpawnEnemy(Coord, Coalition, PilotGroup)
     CSAR_Enemy_Counter = CSAR_Enemy_Counter + 1
     local Heading = math.random(0, 359)
-    local Distance = math.random(1000, 1500)
+    local Distance = math.random(1000, 3000)
     local CoordNew = Coord:Translate(Distance, Heading)
     local InWater = CoordInWater(CoordNew)
     if not InWater then
@@ -606,6 +606,12 @@ local function SpawnPilot(Coord, Coalition, EnemyNear, SpawnDelay, ActBeaconsGua
         local CurSpawn = SPAWN:NewWithAlias(PilotTemplate, CurAlias)
         CurSpawn:OnSpawnGroup(
             function(SpwnGroup)
+
+                -- SaveGroups support
+                if STNE.API.InitGroupForSave ~= nil then
+                    STNE.API.InitGroupForSave(SpwnGroup, PilotTemplate)
+                end
+
                 local InWater = CoordInWater(Coord)
                 if Debug then MESSAGE:New("DEBUG: CSAR: Spawn pilot: " .. SpwnGroup:GetName(), 10):ToAll() end
                 local CurBeaconsGuard, CurBeaconsNav = SpawnBeacon(Coord, false, true, Coalition)
@@ -732,6 +738,9 @@ function STNE_CSAR_EventHandler:OnEventBirth(EventData)
             CurGroup.stneCSAR.PilotCargoMax = 0
         end
         if Debug then MESSAGE:New("DEBUG: CSAR: EVENT: Birth type: " .. CurType, 10):ToAll() end
+        if CurUnit:IsPlayer() then
+            EnterPlaneMsg(CLIENT:FindByName(CurUnit:GetName()))
+        end
     end
 end
 
@@ -1096,6 +1105,10 @@ SCHEDULER:New(nil, function()
                             CurPilotGroup.stneCSAR.BeaconsGuard = CurBeaconsGuard
                             CurPilotGroup.stneCSAR.BeaconsNav = CurBeaconsNav
                             CurPilotGroup.stneCSAR.BeaconActivated = true
+                            -- Hypothermia
+                            if PilotInWater then
+                                CleanUpTimer(CurPilotGroup, false, Hypothermia)
+                            end
                         end
 
                         if CurPilotGroup.stneCSAR.BeaconActivated ~= nil and CurRescueGroup.stneCSAR.Ejected == nil then
