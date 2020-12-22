@@ -50,7 +50,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.RadioStation.lua'
-local Version = '201120'
+local Version = '201221'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -199,11 +199,19 @@ Clients_Set:FilterStart()
 
 -- Client joins slot event
 if MuteFC3 == true then
-    Clients_Set:ForEachClient(
-        function(Client)
-            Client:Alive(MuteFC3Radio, Client)
+    -- Eventhandler
+    if STNE == nil then STNE = {} end
+    if STNE.EventHandler == nil then STNE.EventHandler = {} end
+    if STNE.EventHandler.RadioStation == nil then STNE.EventHandler.RadioStation = {} end
+    STNE.EventHandler.RadioStation = EVENTHANDLER:New()
+    STNE.EventHandler.RadioStation:HandleEvent(world.event.S_EVENT_BIRTH)
+    -- OnEventBirth event
+    function STNE.EventHandler.RadioStation:OnEventBirth(EventData)
+        if Debug then BASE:E({FileVer,'OnEventBirth'}) end
+        if EventData.IniUnit ~= nil and EventData.IniUnit:IsPlayer() then
+            MuteFC3Radio(EventData.IniUnit)
         end
-    )
+    end
 end
 
 --- Is some of clients flying with FC3 plane
