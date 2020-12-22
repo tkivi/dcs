@@ -39,7 +39,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.OperationFlagsMarkers.lua'
-local Version = '201101'
+local Version = '201221'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -222,13 +222,19 @@ end
 
 -- Client joins slot event
 if F10Menu == true then
-    local Clients_Set = SET_CLIENT:New()
-    Clients_Set:FilterStart()
-    Clients_Set:ForEachClient(
-        function(Client)
-            Client:Alive(AddGroupMenus, Client)
+    -- Eventhandler
+    if STNE == nil then STNE = {} end
+    if STNE.EventHandler == nil then STNE.EventHandler = {} end
+    if STNE.EventHandler.OperationFlagsMarkers == nil then STNE.EventHandler.OperationFlagsMarkers = {} end
+    STNE.EventHandler.OperationFlagsMarkers = EVENTHANDLER:New()
+    STNE.EventHandler.OperationFlagsMarkers:HandleEvent(world.event.S_EVENT_BIRTH)
+    -- OnEventBirth event
+    function STNE.EventHandler.OperationFlagsMarkers:OnEventBirth(EventData)
+        if Debug then BASE:E({FileVer,'OnEventBirth'}) end
+        if EventData.IniUnit ~= nil and EventData.IniUnit:IsPlayer() then
+            AddGroupMenus(EventData.IniUnit)
         end
-    )
+    end
 end
 
 -- EOF
