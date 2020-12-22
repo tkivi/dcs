@@ -76,28 +76,28 @@ local Cfg = {
         },
         ['CARGO LEBANONFARP'] = {     Flag=7002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
         ['CARGO ISRAELFARP'] = {      Flag=7003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['CARGO KING HUSSEIN'] = {    Flag=7004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['CARGO INCIRLIK'] = {        Flag=7005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['CARGO RAMAT DAVID'] = {     Flag=7006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO MINAKH'] = {      Flag=1001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO ALEPPO'] = {      Flag=1002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO KUWEIRES'] = {    Flag=1003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO JIRAH'] = {       Flag=1004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO ABUDUHUR'] = {    Flag=1005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO1 CARGO PATRIOT'] = {     Flag=1006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
-		['AO1 CARGO HAWK'] = {        Flag=1007,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
-		['AO3 CARGO BASSELASSAD'] = { Flag=3001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO3 CARGO PATRIOT'] = {     Flag=3002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
-		['AO3 CARGO HAWK'] = {        Flag=3003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
-		['AO4 CARGO HAMA'] = {        Flag=4001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO4 CARGO ALQUSAYR'] = {    Flag=4002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO4 CARGO ROADBASE'] = {    Flag=4003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO5 CARGO ROADBASE'] = {    Flag=5001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO6 CARGO KHALKHALAH'] = {  Flag=6001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO6 CARGO DAMASCUS'] = {    Flag=6002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO6 CARGO MEZZEH'] = {      Flag=6003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
-		['AO6 CARGO PATRIOT'] = {     Flag=6004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
-		['AO6 CARGO HAWK'] = {        Flag=6005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
+        ['CARGO KING HUSSEIN'] = {    Flag=7004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['CARGO INCIRLIK'] = {        Flag=7005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['CARGO RAMAT DAVID'] = {     Flag=7006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO MINAKH'] = {      Flag=1001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO ALEPPO'] = {      Flag=1002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO KUWEIRES'] = {    Flag=1003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO JIRAH'] = {       Flag=1004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO ABUDUHUR'] = {    Flag=1005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO1 CARGO PATRIOT'] = {     Flag=1006,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+        ['AO1 CARGO HAWK'] = {        Flag=1007,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
+        ['AO3 CARGO BASSELASSAD'] = { Flag=3001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO3 CARGO PATRIOT'] = {     Flag=3002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+        ['AO3 CARGO HAWK'] = {        Flag=3003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
+        ['AO4 CARGO HAMA'] = {        Flag=4001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO4 CARGO ALQUSAYR'] = {    Flag=4002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO4 CARGO ROADBASE'] = {    Flag=4003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO5 CARGO ROADBASE'] = {    Flag=5001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO6 CARGO KHALKHALAH'] = {  Flag=6001,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO6 CARGO DAMASCUS'] = {    Flag=6002,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO6 CARGO MEZZEH'] = {      Flag=6003,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['FUEL']=2,   ['AMMO']=2,    },},},
+        ['AO6 CARGO PATRIOT'] = {     Flag=6004,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=3,   ['REPAIR']=6,  },},},
+        ['AO6 CARGO HAWK'] = {        Flag=6005,   Request={   [1]={   ['REPAIR']=2,   ['FUEL']=2,  },   [2]={   ['AMMO']=2,   ['REPAIR']=4,  },},},
     },
 --#################################################################################################
 --##  CONFIGURATION END  ##  DO NOT EDIT BELOW THIS LINE  #########################################
@@ -106,7 +106,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SlingloadLogistic.lua'
-local Version = '201214'
+local Version = '201221'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -136,6 +136,7 @@ if STNE.EventHandler == nil then STNE.EventHandler = {} end
 if STNE.EventHandler.SlingloadLogistic == nil then STNE.EventHandler.SlingloadLogistic = {} end
 STNE.EventHandler.SlingloadLogistic = EVENTHANDLER:New()
 STNE.EventHandler.SlingloadLogistic:HandleEvent(world.event.S_EVENT_TAKEOFF)
+STNE.EventHandler.SlingloadLogistic:HandleEvent(world.event.S_EVENT_BIRTH)
 
 -- Local variables
 local Debug2 = false
@@ -716,20 +717,33 @@ local function AddGroupMenus(Client)
     Client.InternalCargoMenuStatus = MENU_GROUP_COMMAND:New(Client:GetGroup(), 'Internal cargo / Cargo on ground', Client.InternalCargoMenu, ShowInternalCargo, Client)
 end
 
--- Client joins slot event
-local Clients_Set = SET_CLIENT:New()
-Clients_Set:FilterStart()
-Clients_Set:ForEachClient(
-    function(Client)
-        Client:Alive(AddGroupMenus, Client)
+--- Init unit at birth event
+--- @param UnitObj table
+local function InitUnitBirth(UnitObj)
+    local UnitIsPlayer = UnitObj:IsPlayer()
+    if Debug then BASE:E({FileVer,'InitUnitBirth',UnitIsPlayer=UnitIsPlayer}) end
+    if UnitIsPlayer then
+        local UnitName = UnitObj:GetName()
+        local Client = CLIENT:FindByName(UnitName)
+        if Client ~= nil then
+            AddGroupMenus(Client)
+        end
     end
-)
+end
+
+-- OnEventBirth event
+function STNE.EventHandler.SlingloadLogistic:OnEventBirth(EventData)
+    if Debug then BASE:E({FileVer,'OnEventBirth'}) end
+    if EventData.IniUnit ~= nil then
+        InitUnitBirth(EventData.IniUnit)
+    end
+end
 
 -- OnEventTakeoff event
 function STNE.EventHandler.SlingloadLogistic:OnEventTakeoff(EventData)
     if Debug then BASE:E({FileVer,'OnEventTakeoff'}) end
-    BASE:E(EventData)
-    if EventData.IniUnitName ~= nil then
+    --BASE:E(EventData)
+    if EventData.IniUnitName ~= nil and EventData.IniUnit ~= nil and EventData.IniUnit:IsPlayer() then
         local Client = CLIENT:FindByName(EventData.IniUnitName)
         if Client ~= nil then
             if Client.InternalCargoMenuLoad ~= nil then
