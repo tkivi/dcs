@@ -38,7 +38,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.MissionEnd.lua'
-local Version = '201111'
+local Version = '201221'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -157,7 +157,7 @@ for _, WarningTime in pairs(WarningTimes) do
 end
 
 --- Check if client is on water
---- @param Coord table
+--- @param Client table
 local function ClientOnWater(Client)
     local Coord = Client:GetCoordinate()
     if Coord:IsSurfaceTypeShallowWater() or Coord:IsSurfaceTypeWater() then
@@ -307,13 +307,19 @@ end
 
 -- Client joins slot event
 if F10Menu == true then
-    local Clients_Set = SET_CLIENT:New()
-    Clients_Set:FilterStart()
-    Clients_Set:ForEachClient(
-        function(Client)
-            Client:Alive(AddGroupMenus, Client)
+    -- Eventhandler
+    if STNE == nil then STNE = {} end
+    if STNE.EventHandler == nil then STNE.EventHandler = {} end
+    if STNE.EventHandler.MissionEnd == nil then STNE.EventHandler.MissionEnd = {} end
+    STNE.EventHandler.MissionEnd = EVENTHANDLER:New()
+    STNE.EventHandler.MissionEnd:HandleEvent(world.event.S_EVENT_BIRTH)
+    -- OnEventBirth event
+    function STNE.EventHandler.MissionEnd:OnEventBirth(EventData)
+        if Debug then BASE:E({FileVer,'OnEventBirth'}) end
+        if EventData.IniUnit ~= nil and EventData.IniUnit:IsPlayer() then
+            AddGroupMenus(EventData.IniUnit)
         end
-    )
+    end
 end
 
 -- EOF
