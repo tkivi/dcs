@@ -65,7 +65,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201219'
+local Version = '201229'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -229,7 +229,7 @@ local CSAR_Msg_Unload_Pilot_Good = {
         "Nice flying buddy, I'm out.",
         "That was a short flight, Thanks!",
         "Thanks for the ride!",
-        "Smooth ride. I'll by the drinks later.",
+        "Smooth ride. I'll buy the drinks later.",
         "You guys have done this before! Much appreciated.",
     },
 }
@@ -608,7 +608,7 @@ local function SpawnPilot(Coord, Coalition, EnemyNear, SpawnDelay, ActBeaconsGua
             function(SpwnGroup)
 
                 -- SaveGroups support
-                if STNE.API.InitGroupForSave ~= nil then
+                if STNE ~= nil and STNE.API ~= nil and STNE.API.InitGroupForSave ~= nil then
                     STNE.API.InitGroupForSave(SpwnGroup, PilotTemplate)
                 end
 
