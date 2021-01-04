@@ -49,7 +49,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CarrierRecovery.lua'
-local Version = '201015'
+local Version = '201229'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -78,14 +78,14 @@ local Debug2 = false
 local function CarrierRescue()
     if Rescue.Enable then
         if Debug then BASE:E({FileVer,Rescue=Rescue.Enable,Group=Rescue.Group}) end
-        local CarrierRescue = RESCUEHELO:New(UNIT:FindByName(Carrier.Unit), Rescue.Group)
+        local CarrierRescueObj = RESCUEHELO:New(UNIT:FindByName(Carrier.Unit), Rescue.Group)
         if Rescue.AirStart then
-            CarrierRescue:SetTakeoffAir()
+            CarrierRescueObj:SetTakeoffAir()
         else
-            CarrierRescue:SetTakeoffCold()
+            CarrierRescueObj:SetTakeoffCold()
         end
-        if Debug2 then CarrierRescue:SetDebugModeON() end
-        CarrierRescue:Start()
+        if Debug2 then CarrierRescueObj:SetDebugModeON() end
+        CarrierRescueObj:Start()
     else
         if Debug then BASE:E({FileVer,Rescue=Rescue.Enable}) end
     end
@@ -95,19 +95,19 @@ end
 local function CarrierAWACS()
     if AWACS.Enable then
         if Debug then BASE:E({FileVer,AWACS=AWACS.Enable,Group=AWACS.Group,Radio=AWACS.Radio,Speed=AWACS.Speed,Alt=AWACS.Alt}) end
-        local CarrierAWACS = RECOVERYTANKER:New(UNIT:FindByName(Carrier.Unit), AWACS.Group)
-        CarrierAWACS:SetAWACS()
-        CarrierAWACS:SetTACANoff()
-        CarrierAWACS:SetRadio(AWACS.Radio)
-        CarrierAWACS:SetSpeed(AWACS.Speed)
-        CarrierAWACS:SetAltitude(AWACS.Alt)
+        local CarrierAWACSObj = RECOVERYTANKER:New(UNIT:FindByName(Carrier.Unit), AWACS.Group)
+        CarrierAWACSObj:SetAWACS()
+        CarrierAWACSObj:SetTACANoff()
+        CarrierAWACSObj:SetRadio(AWACS.Radio)
+        CarrierAWACSObj:SetSpeed(AWACS.Speed)
+        CarrierAWACSObj:SetAltitude(AWACS.Alt)
         if AWACS.AirStart then
-            CarrierAWACS:SetTakeoffAir()
+            CarrierAWACSObj:SetTakeoffAir()
         else
-            CarrierAWACS:SetTakeoffCold()
+            CarrierAWACSObj:SetTakeoffCold()
         end
-        if Debug2 then CarrierAWACS:SetDebugModeON() end
-        CarrierAWACS:Start()
+        if Debug2 then CarrierAWACSObj:SetDebugModeON() end
+        CarrierAWACSObj:Start()
     else
         if Debug then BASE:E({FileVer,AWACS=AWACS.Enable}) end
     end
@@ -119,18 +119,18 @@ local function CarrierTanker()
         local Channel = Tanker.TACAN[1]
         local Message = Tanker.TACAN[2]
         if Debug then BASE:E({FileVer,Tanker=Tanker.Enable,Group=Tanker.Group,Radio=Tanker.Radio,Speed=Tanker.Speed,Alt=Tanker.Alt,Channel=Channel,Message=Message}) end
-        local CarrierTanker = RECOVERYTANKER:New(UNIT:FindByName(Carrier.Unit), Tanker.Group)
-        CarrierTanker:SetTACAN(Channel, Message)
-        CarrierTanker:SetRadio(Tanker.Radio)
-        CarrierTanker:SetSpeed(Tanker.Speed)
-        CarrierTanker:SetAltitude(Tanker.Alt)
+        local CarrierTankerObj = RECOVERYTANKER:New(UNIT:FindByName(Carrier.Unit), Tanker.Group)
+        CarrierTankerObj:SetTACAN(Channel, Message)
+        CarrierTankerObj:SetRadio(Tanker.Radio)
+        CarrierTankerObj:SetSpeed(Tanker.Speed)
+        CarrierTankerObj:SetAltitude(Tanker.Alt)
         if Tanker.AirStart then
-            CarrierTanker:SetTakeoffAir()
+            CarrierTankerObj:SetTakeoffAir()
         else
-            CarrierTanker:SetTakeoffCold()
+            CarrierTankerObj:SetTakeoffCold()
         end
-        if Debug2 then CarrierTanker:SetDebugModeON() end
-        CarrierTanker:Start()
+        if Debug2 then CarrierTankerObj:SetDebugModeON() end
+        CarrierTankerObj:Start()
     else
         if Debug then BASE:E({FileVer,Tanker=Tanker.Enable}) end
     end
@@ -162,9 +162,9 @@ end
 --- @param Client table
 local function IsClientInRange(Client)
     if Client ~= nil then
-        local Carrier = GROUP:FindByName(Carrier.Group)
-        if Carrier ~= nil and Carrier:IsAlive() then
-            local CarrierCoord = Carrier:GetCoordinate()
+        local CarrierObj = GROUP:FindByName(Carrier.Group)
+        if CarrierObj ~= nil and CarrierObj:IsAlive() then
+            local CarrierCoord = CarrierObj:GetCoordinate()
             local ClientCoord = Client:GetCoordinate()
             local Distance = ClientCoord:Get2DDistance(CarrierCoord)
             if Debug then BASE:E({FileVer,Client=Client:GetName(),Carrier=Carrier.Group,Distance=math.floor(Distance),InRange=Distance<=ClientRange}) end
