@@ -3,7 +3,7 @@ local Cfg = {
 --
 --  SyriaTrapFSM
 --
---  Syria trap mission FSM for ground groups.
+--  Syria trap mission FSM for ground groups
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
