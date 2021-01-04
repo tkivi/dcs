@@ -65,7 +65,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201229'
+local Version = '201231'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -202,6 +202,20 @@ local function EnterPlaneMsg(Client)
         MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nSee briefing for details.'
         MESSAGE:New(MessageText, 30):ToGroup(Client:GetGroup())
     end
+end
+
+--- Client landing message
+--- @param Client table
+local function PlaneLandingMsg(Client)
+    if Debug then BASE:E({FileVer,PlaneLandingMsg=Client:GetPlayerName()}) end
+    local MessageText = 'Member of flight has landed. '
+    local LivesCount = GetCrewCount(Client)
+    if LivesCount > 1 then
+        MessageText = MessageText..'Lives returned to pool.'
+    else
+        MessageText = MessageText..'One life returned to pool.'
+    end
+    MESSAGE:New(MessageText, 15):ToGroup(Client:GetGroup())
 end
 
 --local Clients_Set = SET_CLIENT:New()
@@ -796,6 +810,9 @@ function STNE_CSAR_EventHandler:OnEventLand(EventData)
             local FriendlyCoalition = EventData.IniCoalition
             if IsEventNearAirbase(CurUnit, FriendlyCoalition) then
                 AddRemoveLives(FriendlyCoalition, true, nil, GetCrewCount(CurUnit))
+                if IsPlayer then
+                    PlaneLandingMsg(CurUnit)
+                end
             end
         end
     end
