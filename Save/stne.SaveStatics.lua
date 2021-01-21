@@ -25,7 +25,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveStatics.lua'
-local Version = '201025'
+local Version = '210107'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -185,12 +185,12 @@ local function PrepareStatics()
 end
 
 --- Save data to file
-local function SaveDataToFile()
+local function SaveDataToFile(ResetFlag)
     if Debug then BASE:E({FileVer,'SaveDataToFile'}) end
     -- Save data if io enabled
     if io then
         local SaveData = ''
-        local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveStatics)
+        --local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveStatics)
         if ResetFlag == 0 then
             -- Prepare statics data for save
             PrepareStatics()
@@ -219,14 +219,15 @@ STNE.EventHandler.Save.Statics = EVENTHANDLER:New()
 STNE.EventHandler.Save.Statics:HandleEvent(world.event.S_EVENT_MISSION_END)
 -- On mission end event
 function STNE.EventHandler.Save.Statics:OnEventMissionEnd(EventData)
-    SaveDataToFile()
+    local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveStatics)
+    SaveDataToFile(ResetFlag)
 end
 
 -- Scheduler
 if SaveTimer > 0 then
     if Debug then BASE:E({FileVer,Scheduler='enabled'}) end
     SCHEDULER:New(nil, function()
-        SaveDataToFile()
+        SaveDataToFile(0)
     end, {}, SaveTimer, SaveTimer)
 else
     if Debug then BASE:E({FileVer,Scheduler='disabled'}) end
