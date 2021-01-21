@@ -30,7 +30,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SaveFlags.lua'
-local Version = '200828'
+local Version = '210107'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -168,12 +168,12 @@ local function PrepareFlags()
 end
 
 --- Save data to file
-local function SaveDataToFile()
+local function SaveDataToFile(ResetFlag)
     if Debug then BASE:E({FileVer,'SaveDataToFile'}) end
     -- Save data if io enabled
     if io then
         local SaveData = ''
-        local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveFlags)
+        --local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveFlags)
         if ResetFlag == 0 then
             -- Prepare flag data for save
             PrepareFlags()
@@ -202,14 +202,15 @@ STNE.EventHandler.Save.Flags = EVENTHANDLER:New()
 STNE.EventHandler.Save.Flags:HandleEvent(world.event.S_EVENT_MISSION_END)
 -- On mission end event
 function STNE.EventHandler.Save.Flags:OnEventMissionEnd(EventData)
-    SaveDataToFile()
+    local ResetFlag = trigger.misc.getUserFlag(STNE.Flags.ResetSaveFlags)
+    SaveDataToFile(ResetFlag)
 end
 
 -- Scheduler
 if SaveTimer > 0 then
     if Debug then BASE:E({FileVer,Scheduler='enabled'}) end
     SCHEDULER:New(nil, function()
-        SaveDataToFile()
+        SaveDataToFile(0)
     end, {}, SaveTimer, SaveTimer)
 else
     if Debug then BASE:E({FileVer,Scheduler='disabled'}) end
