@@ -6,7 +6,6 @@ local Cfg = {
 --  Mission end timer with warnings.
 --  F10 radio menu. (optional)
 --  Overtime to give more time for clients to land. (optional)
---  Expedite mission end when no activity. (optional)
 --
 --  https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/
 --
@@ -18,7 +17,7 @@ local Cfg = {
     EndFlag = 666,                                      -- Mission end flag
     MissionTime = 18000,                                -- Time to set mission end flag true, in seconds
     OverTime = 1800,                                    -- Extra time for clients to land (0 = disabled), in seconds
-    ExpediteTime = 0,                                   -- Expedite mission end time if no clients alive (0 = disabled), in seconds
+    --ExpediteTime = 0,                                   -- Expedite mission end time if no clients alive (0 = disabled), in seconds
     Warnings = {                                        -- Warning timers before mission end, in seconds
         3600,
         1800,
@@ -38,7 +37,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.MissionEnd.lua'
-local Version = '201221'
+local Version = '210701'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -56,7 +55,7 @@ local F10Menu = Cfg.F10Menu
 local EndFlag = Cfg.EndFlag
 local MissionTime = Cfg.MissionTime
 local OverTime = Cfg.OverTime
-local ExpediteTime = Cfg.ExpediteTime
+--local ExpediteTime = Cfg.ExpediteTime
 local WarningTimes = Cfg.Warnings
 local SoundFolder = Cfg.SoundFolder
 local SoundFile = Cfg.SoundFile
@@ -91,13 +90,14 @@ local function SetEndFlag()
     trigger.action.setUserFlag(STNE.Flags.MissionEnd, 1)
 end
 
---- Send error message
+--[[ Send error message
 --- @param MessageText string
 local function SendError(MessageText)
     local ErrorMsg = 'ERROR: '..FileVer..' '..MessageText
     MESSAGE:New(ErrorMsg, 300):ToAll()
     env.info(ErrorMsg)
 end
+]]
 
 --- Send message to all
 --- @param MessageText string
@@ -192,7 +192,7 @@ local function IsAllClientsLanded()
     return AllClientsLanded, ClientNamesInAir, ClientNamesInTaxi
 end
 
---- Is all clients dead or spectating
+--[[ Is all clients dead or spectating
 local function IsAllClientsDead()
     local AllClientsDead = true
     Set_Client:ForEachClient(
@@ -205,8 +205,9 @@ local function IsAllClientsDead()
     if Debug then BASE:E({FileVer,AllClientsDead=AllClientsDead}) end
     return AllClientsDead
 end
+]]
 
--- Expedite mission end scheduler
+--[[ Expedite mission end scheduler
 if ExpediteTime > 0 then
     if ExpediteTime > MissionTime then
         SendError('ExpediteTime value too high')
@@ -237,6 +238,7 @@ if ExpediteTime > 0 then
         end, {}, MissionTime - ExpediteTime, 60, nil, MissionTime)
     end
 end
+]]
 
 -- Mission end and overtime scheduler
 local ForceEndTime = nil
