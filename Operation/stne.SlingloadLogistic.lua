@@ -106,7 +106,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.SlingloadLogistic.lua'
-local Version = '201221'
+local Version = '210107'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -688,17 +688,17 @@ local function ShowInternalCargo(Client)
     if InternalCargoCapacity[PlaneType] ~= nil then
         CargoSpace = InternalCargoCapacity[PlaneType]
     end
-    local MessageText = '******************************\nINTERNAL CARGO SPACE: '..CargoSpace..'\n******************************\n'
+    local MessageText = '************************************************************\nINTERNAL CARGO SPACE: '..CargoSpace..'\n************************************************************\n'
     if Client.InternalCargo ~= nil and not IsEmptyTable(Client.InternalCargo) then
         for Cargo, Value in pairs(Client.InternalCargo) do
             MessageText = MessageText..'\n'..Cargo..' = '..Value
         end
     else
-        MessageText = MessageText..'\nNo internal cargo'
+        MessageText = MessageText..'\nNo internal cargo onboard'
     end
     local CargoOnGround = GetAvailableInternalCargo(Client)
     if not IsEmptyTable(CargoOnGround) then
-        MessageText = MessageText..'\n\n******************************\nCARGO ON GROUND:\n******************************\n'
+        MessageText = MessageText..'\n\n************************************************************\nAVAILABLE INTERNAL CARGO ON GROUND:\n************************************************************\n'
         for Cargo, Value in pairs(CargoOnGround) do
             MessageText = MessageText..'\n'..Cargo..' = '..Value
         end
