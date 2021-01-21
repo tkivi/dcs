@@ -65,7 +65,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.CSAR.lua'
-local Version = '201231'
+local Version = '210121'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -124,13 +124,28 @@ local CSAR_Multicrew_Planes = {
 
 -- Crew count in plane
 local function GetCrewCount(CurUnit)
-    local PlaneTypeName = CurUnit:GetTypeName()
+    --local PlaneTypeName = CurUnit:GetTypeName()
     local CrewCount = 1
-    if CSAR_Multicrew_Planes[PlaneTypeName] ~= nil then
-        CrewCount = 2
-    end
+    --if CSAR_Multicrew_Planes[PlaneTypeName] ~= nil then
+    --    CrewCount = 2
+    --end
     if Debug then MESSAGE:New("DEBUG: CSAR: GetCrewCount = "..CrewCount, 10):ToAll() end
     return CrewCount
+end
+
+--- Update life pool flags
+--- @param Coalition boolean
+local function UpdateFlags(Coalition)
+    if Debug then BASE:E({FileVer,'UpdateFlags'}) end
+    if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+        if STNE.Save.Tables.CSAR[Coalition] > 0 then
+            if Debug then BASE:E({FileVer,'UpdateFlags',Flag=PilotLifePool[Coalition]['Flag'],Value='false'}) end
+            trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 0)
+        else
+            if Debug then BASE:E({FileVer,'UpdateFlags',Flag=PilotLifePool[Coalition]['Flag'],Value='true'}) end
+            trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 1)
+        end
+    end
 end
 
 --- Add/remove pilot lives for coalition
@@ -151,15 +166,18 @@ local function AddRemoveLives(Coalition, AddLives, UseMultiplier, OverrideCrewCo
             end
         else
             STNE.Save.Tables.CSAR[Coalition] = STNE.Save.Tables.CSAR[Coalition] - CrewCount
+            if STNE.Save.Tables.CSAR[Coalition] < 0 then
+                STNE.Save.Tables.CSAR[Coalition] = 0
+            end
         end
         if Debug then BASE:E({FileVer,'AddRemoveLives',AddLives=IsAddLives,Coalition=Coalition,Lives=STNE.Save.Tables.CSAR[Coalition]}) end
-        if STNE.Save.Tables.CSAR[Coalition] > 0 then
+        --[[if STNE.Save.Tables.CSAR[Coalition] > 0 then
             if Debug then BASE:E({FileVer,'AddRemoveLives',Flag=PilotLifePool[Coalition]['Flag'],Value='false'}) end
             trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 0)
         else
             if Debug then BASE:E({FileVer,'AddRemoveLives',Flag=PilotLifePool[Coalition]['Flag'],Value='true'}) end
             trigger.action.setUserFlag(PilotLifePool[Coalition]['Flag'], 1)
-        end
+        end]]
     end
 end
 
@@ -191,16 +209,25 @@ local function EnterPlaneMsg(Client)
     if Debug then BASE:E({FileVer,EnterPlaneMsg=Client:GetPlayerName()}) end
     local Coalition = Client:GetCoalition()
     if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+
+        local PilotSetGrp = SET_GROUP:New()
+        PilotSetGrp:FilterActive()
+        PilotSetGrp:FilterPrefixes(PrefixPilot)
+
         local MessageText = 'ATTENTION!\n'
         if Coalition == 1 then
             MessageText = MessageText..'RED'
+            PilotSetGrp:FilterCoalitions('red')
         elseif Coalition == 2 then
             MessageText = MessageText..'BLUE'
+            PilotSetGrp:FilterCoalitions('blue')
         else
             MessageText = MessageText..'NEUTRAL'
+            PilotSetGrp:FilterCoalitions('neutral')
         end
-        MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nSee briefing for details.'
-        MESSAGE:New(MessageText, 30):ToGroup(Client:GetGroup())
+        PilotSetGrp:FilterOnce()
+        MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nAvailable CSAR missions: '..PilotSetGrp:Count()..'\n\nSee briefing for details.'
+        MESSAGE:New(MessageText, 60):ToGroup(Client:GetGroup())
     end
 end
 
@@ -216,6 +243,39 @@ local function PlaneLandingMsg(Client)
         MessageText = MessageText..'One life returned to pool.'
     end
     MESSAGE:New(MessageText, 15):ToGroup(Client:GetGroup())
+end
+
+--- Client takeoff message
+--- @param Client table
+local function PlaneTakeoffMsg(Client)
+    if Debug then BASE:E({FileVer,PlaneTakeoffMsg=Client:GetPlayerName()}) end
+    local MessageText = 'Member of flight has took off. '
+    local LivesCount = GetCrewCount(Client)
+    if LivesCount > 1 then
+        MessageText = MessageText..'Lives removed from pool.'
+    else
+        MessageText = MessageText..'One life removed from pool.'
+    end
+    MESSAGE:New(MessageText, 15):ToGroup(Client:GetGroup())
+end
+
+--- Client zero life message
+--- @param Client table
+local function ZeroLifeMsg(Client)
+    if Debug then BASE:E({FileVer,ZeroLifeMsg=Client:GetPlayerName()}) end
+    local Coalition = Client:GetCoalition()
+    if STNE.Save.Tables.CSAR[Coalition] ~= nil then
+        local MessageText = 'ATTENTION!\n'
+        if Coalition == 1 then
+            MessageText = MessageText..'RED'
+        elseif Coalition == 2 then
+            MessageText = MessageText..'BLUE'
+        else
+            MessageText = MessageText..'NEUTRAL'
+        end
+        MessageText = MessageText..' lives remaining: '..STNE.Save.Tables.CSAR[Coalition]..'\n\nCampaign is failed if any friendly pilot dies.\n\nEjected pilots must be brought back with CSAR.'
+        MESSAGE:New(MessageText, 30):ToGroup(Client:GetGroup())
+    end
 end
 
 --local Clients_Set = SET_CLIENT:New()
@@ -746,6 +806,8 @@ function STNE_CSAR_EventHandler:OnEventBirth(EventData)
         local CurType = CurUnit:GetTypeName()
         CurGroup.stneCSAR = {}
         CurGroup.stneCSAR.PilotCargo = 0
+        CurUnit.stneCSAR = {}
+        CurUnit.stneCSAR.Life = nil
         if CSAR_Rescue_Air_Types[CurType] ~= nil then
             CurGroup.stneCSAR.PilotCargoMax = CSAR_Rescue_Air_Types[CurType]
         else
@@ -770,6 +832,34 @@ local function IsEventNearAirbase(CurUnit, FriendlyCoalition)
     return false
 end
 
+-- ForceMissionFailure
+local MissionFailureActive = nil
+local function ForceMissionFailure()
+    if MissionFailureActive == nil then
+        MissionFailureActive = true
+        --if Debug then MESSAGE:New("DEBUG: CSAR: ForceMissionFailure", 10):ToAll() end
+        local Dur = 30
+        local ForceEnd = 1800
+        local MsgInt = 600
+        local Message = "BLUE SIDE HAS LOST ALL LIVES\n\nCAMPAIGN HAS FAILED\n\n"
+        --Server restart in 30min
+        SCHEDULER:New(nil, function()
+            MESSAGE:New(Message.."Server restart in 30min", Dur, nil, true):ToAll()
+        end, {}, 0)
+        SCHEDULER:New(nil, function()
+            MESSAGE:New(Message.."Server restart in 20min", Dur, nil, true):ToAll()
+        end, {}, MsgInt)
+        SCHEDULER:New(nil, function()
+            MESSAGE:New(Message.."Server restart in 10min", Dur, nil, true):ToAll()
+        end, {}, MsgInt+MsgInt)
+        SCHEDULER:New(nil, function()
+            MESSAGE:New(Message.."Server restart", Dur, nil, true):ToAll()
+            trigger.action.setUserFlag(69169, 1) --80008 = end, 69169 = reset save
+            trigger.action.setUserFlag(80008,1)
+        end, {}, ForceEnd)
+    end
+end
+
 -- OnEventPilotDead event
 function STNE_CSAR_EventHandler:OnEventPilotDead(EventData)
     if Debug then MESSAGE:New("DEBUG: CSAR: EVENT: OnEventPilotDead", 10):ToAll() end
@@ -778,8 +868,17 @@ function STNE_CSAR_EventHandler:OnEventPilotDead(EventData)
         local IsPlayer = CurUnit:IsPlayer()
         if Clients_Only and IsPlayer or not Clients_Only then
             local FriendlyCoalition = EventData.IniCoalition
-            if IsEventNearAirbase(CurUnit, FriendlyCoalition) then
-                AddRemoveLives(FriendlyCoalition)
+            if PilotLifePool[FriendlyCoalition] ~= nil then
+                local FailureFlag = trigger.misc.getUserFlag(PilotLifePool[FriendlyCoalition]['Flag'])
+                if FailureFlag > 0 then
+                    ForceMissionFailure()
+                end
+                if IsEventNearAirbase(CurUnit, FriendlyCoalition) then
+                    if CurUnit.stneCSAR.Life == nil then
+                        AddRemoveLives(FriendlyCoalition)
+                    end
+                end
+                UpdateFlags(FriendlyCoalition)
             end
         end
     end
@@ -794,8 +893,23 @@ function STNE_CSAR_EventHandler:OnEventTakeoff(EventData)
         if Clients_Only and IsPlayer or not Clients_Only then
             local FriendlyCoalition = EventData.IniCoalition
             if IsEventNearAirbase(CurUnit, FriendlyCoalition) then
-                AddRemoveLives(FriendlyCoalition, nil, nil, GetCrewCount(CurUnit))
+                if STNE.Save.Tables.CSAR[FriendlyCoalition] ~= nil and STNE.Save.Tables.CSAR[FriendlyCoalition] > 0 then
+                    CurUnit.stneCSAR.Life = true
+                    AddRemoveLives(FriendlyCoalition, nil, nil, GetCrewCount(CurUnit))
+                    if IsPlayer then
+                        PlaneTakeoffMsg(CurUnit)
+                    end
+                else
+                    if IsPlayer then
+                        ZeroLifeMsg(CurUnit)
+                    end
+                end
+                --AddRemoveLives(FriendlyCoalition, nil, nil, GetCrewCount(CurUnit))
+                --if IsPlayer then
+                --    PlaneTakeoffMsg(CurUnit)
+                --end
             end
+            UpdateFlags(FriendlyCoalition)
         end
     end
 end
@@ -809,11 +923,19 @@ function STNE_CSAR_EventHandler:OnEventLand(EventData)
         if Clients_Only and IsPlayer or not Clients_Only then
             local FriendlyCoalition = EventData.IniCoalition
             if IsEventNearAirbase(CurUnit, FriendlyCoalition) then
-                AddRemoveLives(FriendlyCoalition, true, nil, GetCrewCount(CurUnit))
-                if IsPlayer then
-                    PlaneLandingMsg(CurUnit)
+                if CurUnit.stneCSAR.Life ~= nil and CurUnit.stneCSAR.Life == true then
+                    AddRemoveLives(FriendlyCoalition, true, nil, GetCrewCount(CurUnit))
+                    CurUnit.stneCSAR.Life = nil
+                    if IsPlayer then
+                        PlaneLandingMsg(CurUnit)
+                    end
+                else
+                    if IsPlayer then
+                        ZeroLifeMsg(CurUnit)
+                    end
                 end
             end
+            UpdateFlags(FriendlyCoalition)
         end
     end
 end
@@ -851,6 +973,7 @@ function STNE_CSAR_EventHandler:OnEventEjection(EventData)
             if InAir == false and IsEventNearAirbase(CurUnit, FriendlyCoalition) then
                 AddRemoveLives(FriendlyCoalition)
             end
+            UpdateFlags(FriendlyCoalition)
 
             local CurBeaconsGuard, CurBeaconsNav = SpawnBeacon(Coord, true, false, FriendlyCoalition)
 
@@ -1059,6 +1182,7 @@ local function UnloadAllPilots(CurRescueGroup, RecoverGroup) -- ToCoord
                                 CurRescueGroup.stneCSAR.PilotCargo = CurRescueGroup.stneCSAR.PilotCargo - 1
                             end
                             AddRemoveLives(Coalition, true, true)
+                            UpdateFlags(Coalition)
                             PilotRescuedMsg(Coalition, CurRescueGroup)
                         else
                             local CurMsgTable = CSAR_Msg_Unload_Pilot_Failed
