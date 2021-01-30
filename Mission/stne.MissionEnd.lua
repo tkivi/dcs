@@ -37,7 +37,7 @@ local Cfg = {
 
 -- File
 local LuaFile = 'stne.MissionEnd.lua'
-local Version = '210701'
+local Version = '210130'
 local FileVer = LuaFile..'/'..Version
 env.info('FILE: '..FileVer..' START')
 
@@ -55,7 +55,6 @@ local F10Menu = Cfg.F10Menu
 local EndFlag = Cfg.EndFlag
 local MissionTime = Cfg.MissionTime
 local OverTime = Cfg.OverTime
---local ExpediteTime = Cfg.ExpediteTime
 local WarningTimes = Cfg.Warnings
 local SoundFolder = Cfg.SoundFolder
 local SoundFile = Cfg.SoundFile
@@ -89,15 +88,6 @@ local function SetEndFlag()
     if Debug then BASE:E({FileVer,SetEndFlag=STNE.Flags.MissionEnd}) end
     trigger.action.setUserFlag(STNE.Flags.MissionEnd, 1)
 end
-
---[[ Send error message
---- @param MessageText string
-local function SendError(MessageText)
-    local ErrorMsg = 'ERROR: '..FileVer..' '..MessageText
-    MESSAGE:New(ErrorMsg, 300):ToAll()
-    env.info(ErrorMsg)
-end
-]]
 
 --- Send message to all
 --- @param MessageText string
@@ -192,54 +182,6 @@ local function IsAllClientsLanded()
     return AllClientsLanded, ClientNamesInAir, ClientNamesInTaxi
 end
 
---[[ Is all clients dead or spectating
-local function IsAllClientsDead()
-    local AllClientsDead = true
-    Set_Client:ForEachClient(
-        function(Client)
-            if Client ~= nil and Client:IsAlive() then
-                AllClientsDead = false
-            end
-        end
-    )
-    if Debug then BASE:E({FileVer,AllClientsDead=AllClientsDead}) end
-    return AllClientsDead
-end
-]]
-
---[[ Expedite mission end scheduler
-if ExpediteTime > 0 then
-    if ExpediteTime > MissionTime then
-        SendError('ExpediteTime value too high')
-    else
-        local TimeFrame = 300
-        local TimeStamp = nil
-        SCHEDULER:New(nil, function()
-            local AbsTime = timer.getAbsTime()
-            local TimeLeft = MissionTime - (AbsTime - Time0)
-            local RestartTime = TimeLeft
-            local AllClientsDead = IsAllClientsDead()
-            if AllClientsDead then
-                if TimeStamp == nil then
-                    TimeStamp = AbsTime
-                end
-                RestartTime = (TimeStamp + TimeFrame) - AbsTime
-            else
-                TimeStamp = nil
-            end
-            if TimeStamp ~= nil and RestartTime < TimeLeft then
-                if RestartTime <= 0 then
-                    SendMessage('MISSION END: Expedited mission end', nil, true, true)
-                    SetEndFlag()
-                else
-                    SendMessage('MISSION END: Time left '..SecondsToString(TimeLeft)..'\nNo active players found.\nIf no activity in '..SecondsToString(RestartTime)..' -> Expedited mission end possible.', 55, nil, true)
-                end
-            end
-        end, {}, MissionTime - ExpediteTime, 60, nil, MissionTime)
-    end
-end
-]]
-
 -- Mission end and overtime scheduler
 local ForceEndTime = nil
 SCHEDULER:New(nil, function()
@@ -255,14 +197,14 @@ SCHEDULER:New(nil, function()
     else
         local MessageText = 'MISSION END: Overtime left '..SecondsToString(OverTimeLeft)..', expedite landing !'
         if #ClientNamesInAir > 0 then
+            MessageText = MessageText..'\nPlayers airborne: # '..#ClientNamesInAir
             for _, ClientName in pairs(ClientNamesInAir) do
-                MessageText = MessageText..'\nPlayers airborne:'
                 MessageText = MessageText..'\n - '..ClientName
             end
         end
         if #ClientNamesInTaxi > 0 then
+            MessageText = MessageText..'\nPlayers taxiing on ground: # '..#ClientNamesInTaxi
             for _, ClientName in pairs(ClientNamesInTaxi) do
-                MessageText = MessageText..'\nPlayers taxiing on ground:'
                 MessageText = MessageText..'\n - '..ClientName
             end
         end
@@ -285,14 +227,14 @@ local function ShowStatus(Client)
         local OverTimeLeft = ForceEndTime - AbsTime
         MessageText = 'MISSION END: Overtime left '..SecondsToString(OverTimeLeft)..', expedite landing !'
         if #ClientNamesInAir > 0 then
+            MessageText = MessageText..'\nPlayers airborne: # '..#ClientNamesInAir
             for _, ClientName in pairs(ClientNamesInAir) do
-                MessageText = MessageText..'\nPlayers airborne:'
                 MessageText = MessageText..'\n - '..ClientName
             end
         end
         if #ClientNamesInTaxi > 0 then
+            MessageText = MessageText..'\nPlayers taxiing on ground: # '..#ClientNamesInTaxi
             for _, ClientName in pairs(ClientNamesInTaxi) do
-                MessageText = MessageText..'\nPlayers taxiing on ground:'
                 MessageText = MessageText..'\n - '..ClientName
             end
         end
