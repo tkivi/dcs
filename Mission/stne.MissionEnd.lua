@@ -17,7 +17,6 @@ local Cfg = {
     EndFlag = 666,                                      -- Mission end flag
     MissionTime = 18000,                                -- Time to set mission end flag true, in seconds
     OverTime = 1800,                                    -- Extra time for clients to land (0 = disabled), in seconds
-    --ExpediteTime = 0,                                   -- Expedite mission end time if no clients alive (0 = disabled), in seconds
     Warnings = {                                        -- Warning timers before mission end, in seconds
         3600,
         1800,
