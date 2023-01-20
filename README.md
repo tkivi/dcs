@@ -1,1 +1,3 @@
-# dcs
+# DCS Mission Framework for DCS Finland community
+
+# Major rewrite in progress...
